@@ -1,0 +1,83 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background-color: rgb(211, 194, 173);
+}
+
+.headerBar { /*The bar at the top of the screen*/
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: rgb(63, 56, 47);
+    color: rgb(235, 231, 217);
+}
+
+.mainContent {
+    padding: 20px;
+}
+
+.cardHolder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* Quest cards */
+.questCard {
+    border: 6px;
+    border-style: solid;
+    border-color: rgb(63, 56, 47);
+    width: 480px;
+    height: 300px;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: rgb(223, 211, 197);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Overlay (modal) */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.6);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Hidden state */
+.hidden {
+    display: none;
+}
+
+/* Form box */
+.formContainer {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 300px;
+}
+
+/* Buttons */
+.formButtons {
+    display: flex;
+    justify-content: space-between;
+}
+
+/*the thumbnail of each quest*/
+.questThumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 5px;
+}

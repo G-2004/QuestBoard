@@ -5,14 +5,39 @@
     <link rel="icon" href="assets/images/favicon.png"> 
 </head>
 <body>
+    <!-- NavBar / Useful buttons -->
     <div class="headerBar">
-        <div>open sidebar navigation</div>
-        <div>Site Title</div>
-        <div>Create Quest button</div>
+        <div class="sideNav">&#9776;</div> <!-- &#9776; is the hamburger menu icon -->
+        <div class="siteLogo">Site Title</div>
+        <button id="openQuestForm" class="createQuest">Create Quest +</button>
     </div>
+
+    <!-- Quest Cards -->
     <div class="mainContent">
         <div class="cardHolder">
             <!-- quest cards will fill in using json data translate via javascript -->
         </div>
     </div>
+
+    <!-- Form to be displayed upon pressing create quest button -->
+    <div id="questFormOverlay" class="overlay hidden">
+    <div class="formContainer">
+        <h2>Create Quest</h2>
+
+        <input id="questTitle" placeholder="Quest Title">
+        <input id="questReward" placeholder="Reward">
+        <input id="questDifficulty" type="number" min="1" placeholder="Difficulty (1-10+)">
+        
+        <img id="thumbnailPreview" style="width:80px;height:80px;display:block;margin-top:5px;" />
+        <input type="file" id="questThumbnail" accept="image/*">
+
+        <div class="formButtons">
+            <button id="closeForm">Cancel</button>
+            <button id="addQuest">Add+</button>
+        </div>
+    </div>
+
+</div>
+
+    <script src="assets/javascript/cardInserter.js"></script> <!-- Javascript that inserts quest cards into cardHolder -->
 </body>
