@@ -29,9 +29,9 @@ function getDifficultyDisplay(level) {
     if (!level || level < 1) return "—";
 
     if (level <= 10) {
-        return "XD".repeat(level); //REPLACE with an image later
+        return "X".repeat(level); //REPLACE with an image later
     } else {
-        return `XD x ${level}`; //REPLACE with an image later
+        return `X x ${level}`; //REPLACE with an image later
     }
 }
 
@@ -44,10 +44,14 @@ function renderCards() {
     div.classList.add("questCard"); //give that div the questCard class
     //fill in key details with the info on the card and insert into the div
     div.innerHTML = `
-      <img src="${card.thumbnail}" alt="${card.title}" class="questThumbnail">
-      <h3>${card.title}</h3>
-      <p>Reward: ${card.reward} gold</p>
-      <p>Difficulty: ${getDifficultyDisplay(card.difficulty)}</p>
+      <div class="thumbnailWrapper">
+        <img src="${card.thumbnail}" alt="${card.title}" class="questThumbnail">
+      </div>
+      <div class="cardText">
+        <h3>${card.title}</h3>
+        <p>Reward: ${card.reward} gold</p>
+        <p class="TNR">Difficulty: ${getDifficultyDisplay(card.difficulty)}</p>
+      </div>
     `;
     container.appendChild(div); //add this new div under the container div.
   });
@@ -66,7 +70,7 @@ thumbnailInput.addEventListener("change", () => { //when thumbnail input changes
     };
     reader.readAsDataURL(file);
   } else {
-    previewImg.src = ""; // clear preview if no file
+    previewImg.src = "assets/images/defaultThumb.png"; // set back to default preview if no file
   }
 });
 
@@ -112,13 +116,18 @@ function addQuest(title, reward, difficulty, thumbnail) {
   //refresh card display
   renderCards();
 
-  // reset form MAKE THIS ITS OWN FUNCTION!!!
+  // reset form
+  resetForm();
+
+  //hide that form
+  overlay.classList.add("hidden");
+}
+
+// reset form
+function resetForm() {
   document.querySelector("#questTitle").value = "";
   document.querySelector("#questReward").value = "";
   document.querySelector("#questDifficulty").value = "";
   document.querySelector("#questThumbnail").value = "";
-  document.querySelector("#thumbnailPreview").src = "";
-
-  //hide that form
-  overlay.classList.add("hidden");
+  document.querySelector("#thumbnailPreview").src = "assets/images/defaultThumb.png";
 }

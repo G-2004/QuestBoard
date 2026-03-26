@@ -1,0 +1,6 @@
+logo uses bungee font which has been perspective transformed in gimp to make the top shorter than the bottom. 
+then take the selection increase by 6px fill with white on a layer below. 
+Adjust for more consistancy.
+
+https://www.font-generator.com/fonts/bungee/
+makes a base image to work with in the font.
