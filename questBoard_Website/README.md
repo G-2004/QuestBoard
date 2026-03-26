@@ -8,6 +8,8 @@
     -fixed upload preview to reset to default image instead of clearing to no image.
     -began some work on adjusting page to work and look ok at various zoom levels.
     -took code for resetting form and mad it its own function
+    
+    -made quest button look nice
 
 INTENTS
     make pixel art switch do something
@@ -20,3 +22,5 @@ INTENTS
     mapping section
     save progress while navigating site unless browser is fully closed
     increase readability of favicon
+    NOTED ISSUE: highlighting text in the form then dragging mouse out of form before releasing closes form
+    header logo needs to shrink when zooming in to allow other parts to fit on screen.

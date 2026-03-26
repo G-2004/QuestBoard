@@ -35,28 +35,6 @@ function getDifficultyDisplay(level) {
     }
 }
 
-//render the quest cards
-function renderCards() {
-  const container = document.querySelector(".cardHolder");
-  container.innerHTML = ""; //resets if filled to blank for a moment
-  cards.forEach(card => {
-    const div = document.createElement("div"); //create empty div/card
-    div.classList.add("questCard"); //give that div the questCard class
-    //fill in key details with the info on the card and insert into the div
-    div.innerHTML = `
-      <div class="thumbnailWrapper">
-        <img src="${card.thumbnail}" alt="${card.title}" class="questThumbnail">
-      </div>
-      <div class="cardText">
-        <h3>${card.title}</h3>
-        <p>Reward: ${card.reward} gold</p>
-        <p class="TNR">Difficulty: ${getDifficultyDisplay(card.difficulty)}</p>
-      </div>
-    `;
-    container.appendChild(div); //add this new div under the container div.
-  });
-}
-
 // image upload preview
 const thumbnailInput = document.querySelector("#questThumbnail");
 const previewImg = document.querySelector("#thumbnailPreview");
@@ -79,7 +57,9 @@ addBtn.addEventListener("click", () => {
   const title = document.querySelector("#questTitle").value;
   const reward = Number(document.querySelector("#questReward").value);
   const difficulty = Number(document.querySelector("#questDifficulty").value);
+  const pixelated = document.querySelector("#pixelToggle").checked;
   let thumbnail = "assets/images/defaultThumb.png";
+
   // minimum requirements - have a title
   if (!title) {
       alert("Quest needs a title"); //CHANGE from alert to in html message later
@@ -92,24 +72,25 @@ addBtn.addEventListener("click", () => {
       thumbnail = e.target.result; //user thumbnail over-write default
 
       //create quest using upload
-      addQuest(title, reward, difficulty, thumbnail);
+      addQuest(title, reward, difficulty, thumbnail, pixelated);
     };
     reader.readAsDataURL(file);
   }
   else {
     //create quest using default
-    addQuest(title, reward, difficulty, thumbnail);
+    addQuest(title, reward, difficulty, thumbnail, pixelated);
   }
 });
 
 //add quest to cards array
-function addQuest(title, reward, difficulty, thumbnail) {
+function addQuest(title, reward, difficulty, thumbnail, pixelated) {
   const newQuest = {
     id: "quest_" + Date.now(),
     title: title,
     reward: reward || 0,
     difficulty: difficulty || 1,
-    thumbnail: thumbnail
+    thumbnail: thumbnail,
+    pixelated: pixelated
   };
 
   cards.push(newQuest);
@@ -123,6 +104,31 @@ function addQuest(title, reward, difficulty, thumbnail) {
   overlay.classList.add("hidden");
 }
 
+//render the quest cards
+function renderCards() {
+  const container = document.querySelector(".cardHolder");
+  container.innerHTML = ""; //resets if filled to blank for a moment
+  cards.forEach(card => {
+    const div = document.createElement("div"); //create empty div/card
+    div.classList.add("questCard"); //give that div the questCard class
+
+    const pixelClass = card.pixelated ? "pixelated" : ""; //if pixel switch is true ${pixelClass} is pixelated otherwise there is no class added
+
+    //fill in key details with the info on the card and insert into the div
+    div.innerHTML = `
+      <div class="thumbnailWrapper">
+        <img src="${card.thumbnail}" alt="${card.title}" class="questThumbnail ${pixelClass}">
+      </div>
+      <div class="cardText">
+        <h3>${card.title}</h3>
+        <p>Reward: ${card.reward} gold</p>
+        <p class="TNR">Difficulty: ${getDifficultyDisplay(card.difficulty)}</p>
+      </div>
+    `;
+    container.appendChild(div); //add this new div under the container div.
+  });
+}
+
 // reset form
 function resetForm() {
   document.querySelector("#questTitle").value = "";
@@ -130,4 +136,5 @@ function resetForm() {
   document.querySelector("#questDifficulty").value = "";
   document.querySelector("#questThumbnail").value = "";
   document.querySelector("#thumbnailPreview").src = "assets/images/defaultThumb.png";
+  document.querySelector("#pixelToggle").checked = false;
 }
