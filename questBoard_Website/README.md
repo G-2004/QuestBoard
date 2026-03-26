@@ -19,3 +19,4 @@ INTENTS
     come up with schemas for organizing css files and README
     mapping section
     save progress while navigating site unless browser is fully closed
+    increase readability of favicon
