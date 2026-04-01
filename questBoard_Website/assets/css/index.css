@@ -1,124 +1,123 @@
-body {
-    margin: 0;
-    font-family: sans-serif;
-    background-color: rgb(211, 194, 173);
-}
 /*header*/
-.headerBar {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 5px;
-    background-color: rgb(63, 56, 47);
-    color: rgb(235, 231, 217);
-    padding-left: 2%;
-    padding-right: 2%;
-}
+    .headerBar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 5px;
+        background-color: rgb(63, 56, 47);
+        color: rgb(235, 231, 217);
+        padding-left: 2%;
+        padding-right: 2%;
+    }
 
-.sideNav {
-    font-size: 32pt;
-}
-.left {
-    justify-self: start;
-}
+    .sideNav {
+        font-size: 32pt;
+    }
+    .left {
+        justify-self: start;
+    }
 
-.right {
-    justify-self: end;
-}
+    .right {
+        justify-self: end;
+    }
 
-.siteLogo {
-    justify-self: center;
-    filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5));
-}
-/*card stuff*/
-.mainContent {
-    padding: 20px;
-}
-
-.cardHolder {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 25px;
-    justify-content: center;
-}
+    .siteLogo {
+        justify-self: center;
+        filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5));
+    }
 
 /* Quest cards */
-.questCard {
-    border: 6px;
-    border-style: solid;
-    border-color: rgb(63, 56, 47);
-    width: 480px;
-    height: 330px;
-    padding: 0px;
-    border-radius: 10px;
-    background-color: rgb(196, 174, 147);
-    box-shadow: 0 6px 6px rgba(0,0,0,0.4);
-    overflow: hidden;/*clips image if overflowing into border*/
-}
-
-/* Overlay (modal) */
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-
-    background: rgba(0, 0, 0, 0.6);
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Hidden state */
-.hidden {
-    display: none;
-}
+    .cardHolder {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px;
+        justify-content: center;
+    }
+    .questCard {
+        border: 6px;
+        border-style: solid;
+        border-color: rgb(63, 56, 47);
+        width: 480px;
+        height: 330px;
+        padding: 0px;
+        border-radius: 10px;
+        background-color: rgb(196, 174, 147);
+        box-shadow: 0 6px 6px rgba(0,0,0,0.4);
+        overflow: hidden;/*clips image if overflowing into border*/
+    }
 
 /* Form box */
-.formContainer {
-    background: rgb(216, 167, 127);
-    padding: 20px;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 40vw;
-    min-height: 20vh;
-    max-height: 40vh;
-    overflow-y: auto; /*creates scroll bar. looks ugly though. CHANGE THIS LATER*/
-    overflow-x: hidden;
-}
+    .formContainer {
+        background: rgb(216, 167, 127);
+        padding: 20px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 40vw;
+        min-height: 20vh;
+        max-height: 40vh;
+        overflow-y: auto; /*creates scroll bar. looks ugly though. CHANGE THIS LATER*/
+        overflow-x: hidden;
+    }
 
-#thumbnailPreview {
-    width: 20%;
-    justify-self: center;
-}
+    #thumbnailPreview {
+        width: 20%;
+        justify-self: center;
+    }
 
-/* Buttons */
-.formButtons {
-    display: flex;
-    justify-content: space-between;
-}
+    /* Buttons */
+    .formButtons {
+        display: flex;
+        justify-content: space-between;
+    }
 
-/*the thumbnail of each quest*/
-.questThumbnail {
-    width: 100%;
-    height: 60%;
-    object-fit: cover; /*will shrink instead of getting clipped*/
-    object-position: center;
-    display: block;
-    margin-bottom: 5px;
-}
+/*Card*/
+    .mainContent {
+        padding: 20px;
+    }
 
-.cardText {
-    padding: 10px;
-}
+    .cardText {
+        padding: 10px;
+    }
 
-.TNR {/*Times New Roman font applicator*/
-    font-family: 'Times New Roman', Times, serif;
-}
+    /*the thumbnail of each quest*/
+    .questThumbnail {
+        width: 100%;
+        max-height: 60%;
+        object-fit: cover; /*will shrink instead of getting clipped*/
+        object-position: center;
+        justify-self: center;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .overlay {/* Overlay for form */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+
+        background: rgba(0, 0, 0, 0.6);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+/*Other CSS*/
+    .TNR { /*Times New Roman font applicator*/
+        font-family: 'Times New Roman', Times, serif;
+    }
+    .hidden {/* Hidden state */
+        display: none;
+    }
+    body {
+        margin: 0;
+        font-family: sans-serif;
+        background-color: rgb(211, 194, 173);
+    }
 
 /*Create Quest Button*/
     .createQuestBtn{
@@ -142,7 +141,7 @@ body {
         transform: scale(0.96);
     }
 
-/* switch THIS CURRENTLY IS NON FUNCTIONAL LOOKS NICE. DOESN't CHANGE ANYTHING*/
+/* pixel art switch*/
     .switch {
         position: relative;
         display: inline-block;

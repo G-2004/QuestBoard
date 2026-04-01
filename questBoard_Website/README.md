@@ -24,3 +24,7 @@ INTENTS
     increase readability of favicon
     NOTED ISSUE: highlighting text in the form then dragging mouse out of form before releasing closes form
     header logo needs to shrink when zooming in to allow other parts to fit on screen.
+
+##############################################################################################################
+**4/1/2026
+Attempted to reduce XSS vulnerability in card creation form. Unsure if successful.

@@ -103,7 +103,7 @@ function addQuest(title, reward, difficulty, thumbnail, pixelated) {
   //hide that form
   overlay.classList.add("hidden");
 }
-
+/*
 //render the quest cards
 function renderCards() {
   const container = document.querySelector(".cardHolder");
@@ -116,9 +116,7 @@ function renderCards() {
 
     //fill in key details with the info on the card and insert into the div
     div.innerHTML = `
-      <div class="thumbnailWrapper">
         <img src="${card.thumbnail}" alt="${card.title}" class="questThumbnail ${pixelClass}">
-      </div>
       <div class="cardText">
         <h3>${card.title}</h3>
         <p>Reward: ${card.reward} gold</p>
@@ -126,6 +124,50 @@ function renderCards() {
       </div>
     `;
     container.appendChild(div); //add this new div under the container div.
+  });
+}
+*/
+
+//renders each card. slightly safer
+function renderCards() {
+  const container = document.querySelector(".cardHolder");
+
+  container.innerHTML = ""; //clear existing cards
+
+  cards.forEach(card => { //render all cards
+
+    const div = document.createElement("div"); //create base of card
+    div.classList.add("questCard");
+
+    const img = document.createElement("img"); //create space for image
+    img.classList.add("questThumbnail");
+    if (card.pixelated) img.classList.add("pixelated");
+
+    img.src = card.thumbnail; //assign thumbnail image
+    img.alt = card.title; //assign title as alt text should image fail
+
+    const textDiv = document.createElement("div"); //holds all text on the card
+    textDiv.classList.add("cardText");
+
+    const title = document.createElement("h3"); //quest title
+    title.textContent = card.title;
+
+    const reward = document.createElement("p"); //reward amount
+    reward.textContent = `Reward: ${card.reward} gold`;
+
+    const difficulty = document.createElement("p"); //difficulty level
+    difficulty.classList.add("TNR");
+    difficulty.textContent = `Difficulty: ${getDifficultyDisplay(card.difficulty)}`;
+
+    textDiv.appendChild(title); //make these children of the text
+    textDiv.appendChild(reward);
+    textDiv.appendChild(difficulty);
+
+    div.appendChild(img); //make these children of the card
+    div.appendChild(textDiv);
+
+    container.appendChild(div); //make these children of the existing html
+
   });
 }
 
