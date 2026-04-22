@@ -1,5 +1,6 @@
 <head> 
     <link rel="stylesheet" href="assets/css/index.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> <!-- A library I use in coding for foundry vtt with nice in text icons -->
     <meta charset="UTF-8"> <title>Quest Board</title> 
     <meta name="description" content="A web application for table top game masters and players for hosting quest boards alongside having the niche feature to route between player location and quest location.">
     <link rel="icon" href="assets/images/favicon.png"> 
@@ -24,21 +25,30 @@
     <div class="formContainer">
         <h2>Create Quest</h2>
 
-        <input id="questTitle" placeholder="Quest Title">
-        <input id="questReward" placeholder="Reward">
-        <input id="questDifficulty" type="number" min="1" placeholder="Difficulty (1-10+)">
+        <input class="formTextField" id="questTitle" placeholder="Quest Title">
+        <input class="formTextField" id="questReward" placeholder="Reward">
+        <input class="formTextField" id="questDifficulty" type="number" min="1" placeholder="Difficulty (1-10+)">
         
         <img id="thumbnailPreview">
-        <input type="file" id="questThumbnail" accept="image/*">
 
-        <div class="formButtons">
-            <button id="closeForm">Cancel</button>
-            <button id="addQuest">Add+</button>
-            <label class="switch"><!--THIS IS CURRENTLY NON-FUNCTIONAL LOOKS NICE. DOESN'T CHANGE ANYTHING-->
-                <input type="checkbox" id="pixelToggle">
-                <span class="slider"></span>
+        <label for="questThumbnail" class="formButton">
+            <i class="fa-solid fa-image"></i> Upload Image
+        </label>
+        
+        <input class="hidden" type="file" id="questThumbnail" accept="image/*">
+
+        <div class="formButtonsContainer">
+            <button class="formButton" id="closeForm">Cancel</button>
+            
+            <label class="formButton">
+                <span>Pixel Art?</span>
+                <span class="switch">
+                    <input type="checkbox" id="pixelToggle">
+                    <span class="slider"></span>
+                </span>
             </label>
-            <span>Pixel Art?</span>
+
+            <button class="formButton" id="addQuest">Add+</button>
         </div>
     </div>
 

@@ -48,7 +48,7 @@
 
 /* Form box */
     .formContainer {
-        background: rgb(216, 167, 127);
+        background: rgb(196, 174, 147);
         padding: 20px;
         border-radius: 10px;
         display: flex;
@@ -67,9 +67,40 @@
     }
 
     /* Buttons */
-    .formButtons {
+    .formButtonsContainer {
         display: flex;
         justify-content: space-between;
+    }
+    .formButton{
+        font-size: 14pt;
+        border: 5px;
+        border-style: solid;
+        border-color: rgb(216, 167, 127);
+        background-color: rgb(63, 56, 47);
+        color: rgb(235, 231, 217);
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        transition: transform 0.1s ease-in-out; 
+    }
+    .formButton:hover{
+        transform: scale(1.02);
+    }
+    /*Input fields*/
+    .formTextField{
+        font-size: 14pt;
+        border: 5px;
+        border-style: solid;
+        border-color: rgb(216, 167, 127);
+        background-color: rgb(63, 56, 47);
+        color: rgb(235, 231, 217);
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        transition: transform 0.1s ease-in-out; 
+    }
+    .formTextField:hover{
+        transform: scale(1.02);
     }
 
 /*Card*/
@@ -190,4 +221,8 @@
 
     .pixelated {
         image-rendering: pixelated;
+    }
+
+    .hidden{
+        display: none;
     }
