@@ -1,4 +1,5 @@
 INTENTS
+    <i class="fa-solid fa-skull"></i> make replace X in difficulty
     allow user to scale and translate their image before sending it into html as a card
     resize sideNav button
     proceeding form becoming more centered
@@ -30,3 +31,7 @@ INTENTS
     -moved intents section of README to top
     -improved appearance of quest creation form
     -introduced font-awesome library to projects index html page
+    -replaced alert with a normal in form warning
+    -the pixel art switch was made to work prior to this entry
+    -site renamed to adventure atlas. Name is technically taken so still working on title
+    -attempted favicon redesign

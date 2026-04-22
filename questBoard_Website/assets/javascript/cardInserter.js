@@ -61,9 +61,14 @@ addBtn.addEventListener("click", () => {
   let thumbnail = "assets/images/defaultThumb.png";
 
   // minimum requirements - have a title
+  const errorMsg = document.querySelector("#formError");
   if (!title) {
-      alert("Quest needs a title"); //CHANGE from alert to in html message later
+      errorMsg.textContent = "Quest needs a title";
+      errorMsg.classList.remove("hidden");
       return;
+  } 
+  else {
+      errorMsg.classList.add("hidden");
   }
   if (thumbnailInput.files && thumbnailInput.files[0]) { //is true if thumbnail input exists
     const file = thumbnailInput.files[0];

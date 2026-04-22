@@ -1,7 +1,7 @@
 <head> 
     <link rel="stylesheet" href="assets/css/index.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> <!-- A library I use in coding for foundry vtt with nice in text icons -->
-    <meta charset="UTF-8"> <title>Quest Board</title> 
+    <meta charset="UTF-8"> <title>Adventure Atlas</title> 
     <meta name="description" content="A web application for table top game masters and players for hosting quest boards alongside having the niche feature to route between player location and quest location.">
     <link rel="icon" href="assets/images/favicon.png"> 
 </head>
@@ -22,37 +22,38 @@
 
     <!-- Form to be displayed upon pressing create quest button -->
     <div id="questFormOverlay" class="overlay hidden">
-    <div class="formContainer">
-        <h2>Create Quest</h2>
+        <div class="formContainer">
+            <h2>Create Quest</h2>
+            <h3 id="formError" class="formError hidden">Quest needs a title</h3>
 
-        <input class="formTextField" id="questTitle" placeholder="Quest Title">
-        <input class="formTextField" id="questReward" placeholder="Reward">
-        <input class="formTextField" id="questDifficulty" type="number" min="1" placeholder="Difficulty (1-10+)">
-        
-        <img id="thumbnailPreview">
-
-        <label for="questThumbnail" class="formButton">
-            <i class="fa-solid fa-image"></i> Upload Image
-        </label>
-        
-        <input class="hidden" type="file" id="questThumbnail" accept="image/*">
-
-        <div class="formButtonsContainer">
-            <button class="formButton" id="closeForm">Cancel</button>
+            <input class="formTextField" id="questTitle" placeholder="Quest Title">
+            <input class="formTextField" id="questReward" placeholder="Reward">
+            <input class="formTextField" id="questDifficulty" type="number" min="1" placeholder="Difficulty (1-10+)">
             
-            <label class="formButton">
-                <span>Pixel Art?</span>
-                <span class="switch">
-                    <input type="checkbox" id="pixelToggle">
-                    <span class="slider"></span>
-                </span>
+            <img id="thumbnailPreview">
+
+            <label for="questThumbnail" class="formButton">
+                <i class="fa-solid fa-image"></i> Upload Image
             </label>
+            
+            <input class="hidden" type="file" id="questThumbnail" accept="image/*">
 
-            <button class="formButton" id="addQuest">Add+</button>
+            <div class="formButtonsContainer">
+                <button class="formButton" id="closeForm">Cancel</button>
+                
+                <label class="formButton">
+                    <span>Pixel Art?</span>
+                    <span class="switch">
+                        <input type="checkbox" id="pixelToggle">
+                        <span class="slider"></span>
+                    </span>
+                </label>
+
+                <button class="formButton" id="addQuest">Add+</button>
+            </div>
         </div>
-    </div>
 
-</div>
+    </div>
 
     <script src="assets/javascript/cardInserter.js"></script> <!-- Javascript that inserts quest cards into cardHolder -->
 </body>
