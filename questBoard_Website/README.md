@@ -35,3 +35,19 @@ INTENTS
     -the pixel art switch was made to work prior to this entry
     -site renamed to adventure atlas. Name is technically taken so still working on title
     -attempted favicon redesign
+##############################################################################################################
+**4/22/2026
+    -added download button
+    -added upload button
+    -added CSS class creationButtonsContainer and the unused vertCenter CSS class to index.css
+    -added questDetails.html page
+    -cards are saved to local storage (currently non-deletable in app)
+    -added questDetails.js
+    -added defaultNav.css because the navBar will re-appear on multiple pages
+    -added ability to click on card to open the details page and load all the cards data there
+    -removed random secondary index.html
+##############################################################################################################
+**4/23/2026
+    -added ability to add additional images for description page
+    -added bootstrap framework
+    -added bootstrap carousel

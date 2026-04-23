@@ -1,0 +1,26 @@
+    .headerBar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 5px;
+        background-color: rgb(63, 56, 47);
+        color: rgb(235, 231, 217);
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+
+    .sideNav {
+        font-size: 32pt;
+    }
+    .left {
+        justify-self: start;
+    }
+
+    .right {
+        justify-self: end;
+    }
+
+    .siteLogo {
+        justify-self: center;
+        filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5));
+    }

@@ -72,6 +72,8 @@
         justify-content: space-between;
     }
     .formButton{
+        display: flex;
+        gap: 10px;
         font-size: 14pt;
         border: 5px;
         border-style: solid;
@@ -103,6 +105,23 @@
         transition: transform 0.1s ease-in-out; 
     }
     .formTextField:hover{
+        transform: scale(1.02);
+    }
+
+    .formTextArea{
+        font-size: 14pt;
+        border: 5px;
+        border-style: solid;
+        border-color: rgb(216, 167, 127);
+        background-color: rgb(95, 94, 92); /*IDK this just feels right*/
+        color: rgb(235, 231, 217);
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        transition: transform 0.1s ease-in-out; 
+        min-height: 10vh;
+    }
+    .formTextArea:hover{
         transform: scale(1.02);
     }
 
@@ -240,4 +259,12 @@
         2px 0 0 black,
         0 -2px 0 black,
        -2px 0 0 black;
+    }
+    .vertCenter{
+        align-items: center;
+    }
+    .creationButtonsContainer{
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }

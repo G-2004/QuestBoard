@@ -4,6 +4,8 @@ const overlay = document.querySelector("#questFormOverlay");
 const openBtn = document.querySelector("#openQuestForm");
 const closeBtn = document.querySelector("#closeForm");
 const addBtn = document.querySelector("#addQuest");
+const stored = localStorage.getItem("quests");
+const imagesInput = document.querySelector("#questImages");
 
 //when clicking create quest show the form
 openBtn.addEventListener("click", () => {
@@ -53,13 +55,16 @@ thumbnailInput.addEventListener("change", () => { //when thumbnail input changes
 });
 
 //gathers form data to use in addQuest function
-addBtn.addEventListener("click", () => {
+addBtn.addEventListener("click", async () => {
   const title = document.querySelector("#questTitle").value;
   const reward = Number(document.querySelector("#questReward").value);
   const difficulty = Number(document.querySelector("#questDifficulty").value);
   const pixelated = document.querySelector("#pixelToggle").checked;
+  const host = document.querySelector("#questHost").value;
+  const description = document.querySelector("#questDescription").value;
   let thumbnail = "assets/images/defaultThumb.png";
-
+  let images = [];
+  
   // minimum requirements - have a title
   const errorMsg = document.querySelector("#formError");
   if (!title) {
@@ -70,35 +75,45 @@ addBtn.addEventListener("click", () => {
   else {
       errorMsg.classList.add("hidden");
   }
-  if (thumbnailInput.files && thumbnailInput.files[0]) { //is true if thumbnail input exists
-    const file = thumbnailInput.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      thumbnail = e.target.result; //user thumbnail over-write default
+  if (thumbnailInput.files && thumbnailInput.files[0]) { //if custom thumbnail exists
+    thumbnail = await readFileAsDataURL(thumbnailInput.files[0]); // thumbnail var is that thumbnail that exists
+  }
+  if (imagesInput.files.length > 0) {//if there are additional images
+    const files = Array.from(imagesInput.files); //make an array out of them
 
-      //create quest using upload
-      addQuest(title, reward, difficulty, thumbnail, pixelated);
-    };
-    reader.readAsDataURL(file);
+    images = await Promise.all( //wait until all promises finish to continue
+      files.map(file => readFileAsDataURL(file))//create an array of promises one per image
+    );
   }
-  else {
-    //create quest using default
-    addQuest(title, reward, difficulty, thumbnail, pixelated);
-  }
+
+  addQuest(title, reward, difficulty, thumbnail, pixelated, description, host, images); //create quest
 });
 
+function readFileAsDataURL(file) {
+  return new Promise((resolve) => {//complete promise when resolve is complete
+    const reader = new FileReader();//create a new file reader
+    reader.onload = (e) => resolve(e.target.result);//upon loading the image file resolve
+    reader.readAsDataURL(file);//read file as a DataURL
+  });
+}
+
 //add quest to cards array
-function addQuest(title, reward, difficulty, thumbnail, pixelated) {
+function addQuest(title, reward, difficulty, thumbnail, pixelated, description, host, images) {
   const newQuest = {
     id: "quest_" + Date.now(),
     title: title,
     reward: reward || 0,
     difficulty: difficulty || 1,
     thumbnail: thumbnail,
-    pixelated: pixelated
+    pixelated: pixelated,
+    description: description || "", //currently not called for
+    host: host || "",
+    images: images || []
   };
 
   cards.push(newQuest);
+  localStorage.setItem("quests", JSON.stringify(cards)); //store in browser memory
+
   //refresh card display
   renderCards();
 
@@ -108,30 +123,6 @@ function addQuest(title, reward, difficulty, thumbnail, pixelated) {
   //hide that form
   overlay.classList.add("hidden");
 }
-/*
-//render the quest cards
-function renderCards() {
-  const container = document.querySelector(".cardHolder");
-  container.innerHTML = ""; //resets if filled to blank for a moment
-  cards.forEach(card => {
-    const div = document.createElement("div"); //create empty div/card
-    div.classList.add("questCard"); //give that div the questCard class
-
-    const pixelClass = card.pixelated ? "pixelated" : ""; //if pixel switch is true ${pixelClass} is pixelated otherwise there is no class added
-
-    //fill in key details with the info on the card and insert into the div
-    div.innerHTML = `
-        <img src="${card.thumbnail}" alt="${card.title}" class="questThumbnail ${pixelClass}">
-      <div class="cardText">
-        <h3>${card.title}</h3>
-        <p>Reward: ${card.reward} gold</p>
-        <p class="TNR">Difficulty: ${getDifficultyDisplay(card.difficulty)}</p>
-      </div>
-    `;
-    container.appendChild(div); //add this new div under the container div.
-  });
-}
-*/
 
 //renders each card. slightly safer
 function renderCards() {
@@ -164,6 +155,10 @@ function renderCards() {
     difficulty.classList.add("TNR");
     difficulty.textContent = `Difficulty: ${getDifficultyDisplay(card.difficulty)}`;
 
+    div.addEventListener("click", () => {//make it so if you click on the div/card it opens details page
+      window.location.href = `questDetails.html?id=${card.id}`;
+    });
+
     textDiv.appendChild(title); //make these children of the text
     textDiv.appendChild(reward);
     textDiv.appendChild(difficulty);
@@ -184,4 +179,85 @@ function resetForm() {
   document.querySelector("#questThumbnail").value = "";
   document.querySelector("#thumbnailPreview").src = "assets/images/defaultThumb.png";
   document.querySelector("#pixelToggle").checked = false;
+  document.querySelector("#questHost").value = "";
+  document.querySelector("#questDescription").value = "";
 }
+
+//DOWNLOAD BUTTON
+const downloadBtn = document.querySelector("#downloadQuests"); //create variable refering to download button
+
+downloadBtn.addEventListener("click", () => { //listen for click
+  
+  const dataStr = JSON.stringify(cards, null, 2); // convert cards array to JSON string
+
+  const blob = new Blob([dataStr], { type: "application/json" });// create a Blob (file-like object)
+
+  const url = URL.createObjectURL(blob);// create a temporary download link
+  const a = document.createElement("a"); 
+
+  a.href = url; //link to the object url
+  a.download = "quests.json"; //download from url
+
+  document.body.appendChild(a);//add to page temporarily
+  a.click();//simulates clicking on link
+
+  document.body.removeChild(a);//remove link to download file from page
+  URL.revokeObjectURL(url); //delete link to file
+});
+
+//UPLOAD BUTTON (likely opened a new vulnerability of some sort)
+const uploadInput = document.querySelector("#uploadQuests");//create variable refering to upload button
+
+uploadInput.addEventListener("change", () => {//listen for file input
+  const file = uploadInput.files[0];// assign input to variable file
+  if (!file) return;//if no file was input return
+
+  const reader = new FileReader(); //create reader
+
+  reader.onload = function(e) { //when file finishes loading run code inside
+    try {
+      const imported = JSON.parse(e.target.result); //turn json back into array
+
+      if (!Array.isArray(imported)) {//if somehow it failed throw invalid format error
+        throw new Error("Invalid format");
+      }
+
+      const cleaned = imported.map(q => ({//q is quest
+        id: q.id || "quest_" + Date.now() + Math.random(),
+        title: String(q.title || "Untitled Quest"),
+        reward: Number(q.reward) || 0,
+        difficulty: Number(q.difficulty) || 1,
+        thumbnail: q.thumbnail || "assets/images/defaultThumb.png",
+        pixelated: Boolean(q.pixelated),
+        description: String(q.description || ""),
+        host: String(q.host || ""),
+        images: Array.isArray(q.images) ? q.images : []
+      }));
+
+      cards = cleaned;// set cards var to the uploaded cards
+
+      renderCards(); //run render cards
+
+    } 
+    catch (err) { //catch any thrown errors
+      console.error("Import failed:", err);
+      alert("Invalid JSON file.");
+    }
+  };
+
+  reader.readAsText(file);//read as a string/text then onload is triggered
+});
+
+if (stored) {//if there is stored data load it immediately
+  cards = JSON.parse(stored);
+  renderCards();
+}
+
+//TEMPORARY clear button
+const clearBtn = document.querySelector("#clearQuests");
+
+clearBtn.addEventListener("click", () => {
+  localStorage.removeItem("quests");
+  cards = [];
+  renderCards();
+});
