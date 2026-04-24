@@ -4,8 +4,9 @@ const overlay = document.querySelector("#questFormOverlay");
 const openBtn = document.querySelector("#openQuestForm");
 const closeBtn = document.querySelector("#closeForm");
 const addBtn = document.querySelector("#addQuest");
-const stored = localStorage.getItem("quests");
 const imagesInput = document.querySelector("#questImages");
+const thumbnailInput = document.querySelector("#questThumbnail");
+const previewImg = document.querySelector("#thumbnailPreview");
 
 //when clicking create quest show the form
 openBtn.addEventListener("click", () => {
@@ -38,9 +39,6 @@ function getDifficultyDisplay(level) {
 }
 
 // image upload preview
-const thumbnailInput = document.querySelector("#questThumbnail");
-const previewImg = document.querySelector("#thumbnailPreview");
-
 thumbnailInput.addEventListener("change", () => { //when thumbnail input changes...
   if (thumbnailInput.files && thumbnailInput.files[0]) {
     const file = thumbnailInput.files[0];
@@ -98,7 +96,7 @@ function readFileAsDataURL(file) {
 }
 
 //add quest to cards array
-function addQuest(title, reward, difficulty, thumbnail, pixelated, description, host, images) {
+async function addQuest(title, reward, difficulty, thumbnail, pixelated, description, host, images) {
   const newQuest = {
     id: "quest_" + Date.now(),
     title: title,
@@ -112,7 +110,12 @@ function addQuest(title, reward, difficulty, thumbnail, pixelated, description, 
   };
 
   cards.push(newQuest);
-  localStorage.setItem("quests", JSON.stringify(cards)); //store in browser memory
+  try {
+    await saveQuestToDB(newQuest); //save the new quest to the database
+  } 
+  catch (e) {
+    console.error(e);
+  } 
 
   //refresh card display
   renderCards();
@@ -181,6 +184,8 @@ function resetForm() {
   document.querySelector("#pixelToggle").checked = false;
   document.querySelector("#questHost").value = "";
   document.querySelector("#questDescription").value = "";
+  imagesInput.value = "";
+  thumbnailInput.value = "";
 }
 
 //DOWNLOAD BUTTON
@@ -248,11 +253,6 @@ uploadInput.addEventListener("change", () => {//listen for file input
   reader.readAsText(file);//read as a string/text then onload is triggered
 });
 
-if (stored) {//if there is stored data load it immediately
-  cards = JSON.parse(stored);
-  renderCards();
-}
-
 //TEMPORARY clear button
 const clearBtn = document.querySelector("#clearQuests");
 
@@ -261,3 +261,60 @@ clearBtn.addEventListener("click", () => {
   cards = [];
   renderCards();
 });
+
+//indexed DB temp?
+const DB_NAME = "QuestDB";//variable for database name
+const STORE_NAME = "quests";//object/image storage
+
+function openDB() {//create or open database
+  return new Promise((resolve, reject) => {//return results of promise? (I still don't fully get async & promises)
+    const request = indexedDB.open(DB_NAME, 1); //open database with matching name and version or create it
+
+    request.onupgradeneeded = (event) => {//if the database has just been created or the version # has increased
+      const db = event.target.result;//the database is assigned to variable db
+
+      if (!db.objectStoreNames.contains(STORE_NAME)) { //does the object storage table exist
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });//if not create it
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);//fulfill promise
+    request.onerror = () => reject(request.error);//tell await to throw an error
+  });
+}
+
+async function saveQuestToDB(quest) {//saves an individual quest to the database
+  const db = await openDB(); //wait for openDB to resolve
+
+  const tx = db.transaction(STORE_NAME, "readwrite");//create database interaction with ability to read and write to database
+  const store = tx.objectStore(STORE_NAME);//store is the object storage
+
+  store.put(quest);//add the new quest to store
+
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();//whatever called us gets resolved promise
+    tx.onerror = () => reject(tx.error);//...or not
+  });
+}
+
+async function loadQuestsFromDB() {//loads quests from database
+  const db = await openDB();//db is database full of quests SAME AS saveQuestToDB
+  const tx = db.transaction(STORE_NAME, "readonly");
+  const store = tx.objectStore(STORE_NAME);
+
+  return new Promise((resolve, reject) => { //resolve promise
+    const request = store.getAll();//get all database objects in ??? format
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+(async () => {//upon page load
+  try {
+    cards = await loadQuestsFromDB();//load quests
+    renderCards();//render those quests
+  } catch (err) {
+    console.error("Failed to load DB:", err);
+  }
+})();
