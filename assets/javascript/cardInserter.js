@@ -257,14 +257,14 @@ uploadInput.addEventListener("change", () => {//listen for file input
 const clearBtn = document.querySelector("#clearQuests");
 
 clearBtn.addEventListener("click", () => {
-  localStorage.removeItem("quests");
+  clearDB();
   cards = [];
   renderCards();
 });
 
 //indexed DB temp?
 const DB_NAME = "QuestDB";//variable for database name
-const STORE_NAME = "quests";//object/image storage
+const STORE_NAME = "quests";//object storage
 
 function openDB() {//create or open database
   return new Promise((resolve, reject) => {//return results of promise? (I still don't fully get async & promises)
@@ -318,3 +318,16 @@ async function loadQuestsFromDB() {//loads quests from database
     console.error("Failed to load DB:", err);
   }
 })();
+
+async function clearDB() {
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const request = store.clear();
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}

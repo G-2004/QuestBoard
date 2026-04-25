@@ -1,80 +1,105 @@
-// get id from URL
-const params = new URLSearchParams(window.location.search);
-const questId = params.get("id");
+//NEW database stuff
+const DB_NAME = "QuestDB";//variable for database name
+const STORE_NAME = "quests";//object storage
 
-// get stored quests
-const stored = localStorage.getItem("quests");
-const cards = stored ? JSON.parse(stored) : [];
+function openDB() {//create or open database
+  return new Promise((resolve, reject) => {//return results of promise? (I still don't fully get async & promises)
+    const request = indexedDB.open(DB_NAME, 1); //open database with matching name and version or create it
 
-// find the quest
-const quest = cards.find(q => q.id === questId);
+    request.onupgradeneeded = (event) => {//if the database has just been created or the version # has increased
+      const db = event.target.result;//the database is assigned to variable db
 
-// fail safely
-if (!quest) {
-  document.body.innerHTML = "<h2>Quest not found</h2>";
-  throw new Error("Quest not found");
+      if (!db.objectStoreNames.contains(STORE_NAME)) { //does the object storage table exist
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });//if not create it
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);//fulfill promise
+    request.onerror = () => reject(request.error);//tell await to throw an error
+  });
 }
 
-// populate plain text
-document.querySelector("#title").textContent = quest.title || "No title";
-document.querySelector("#host").textContent = "Host: " + (quest.host || "Unknown");
-document.querySelector("#reward").textContent = "Reward: " + (quest.reward || 0) + " gold";
-document.querySelector("#difficulty").textContent = "Difficulty: " + (quest.difficulty || 1);
-document.querySelector("#description").textContent = quest.description || "No description";
+const params = new URLSearchParams(window.location.search);//grab url parameters fed in
+const questId = params.get("id");//questId is id from params/the url
 
-//image carousel
+async function getQuestById(id) {//return id of quest
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readonly");
+  const store = tx.objectStore(STORE_NAME);
 
-const container = document.querySelector("#carouselContainer");
+  return new Promise((resolve, reject) => {
+    const request = store.get(id);
 
-const images = [ //carousel will contain thumbnail and any additional images
-  quest.thumbnail,
-  ...(quest.images || [])
-];
-
-if (images.length === 0) {// use default if nothing provided
-  images.push("assets/images/defaultThumb.png");
+    request.onsuccess = () => resolve(request.result);//return object with matching id
+    request.onerror = () => reject(request.error);
+  });
 }
 
-const carouselId = "questCarousel"; //as per bootstrap requirements
+(async () => {
+  const quest = await getQuestById(questId);
 
-let indicators = ""; //marks at the bottom
-let slides = ""; //images
+  if (!quest) {
+    document.body.innerHTML = "<h2>Quest not found</h2>";
+    return;
+  }
+  
 
-images.forEach((img, index) => {//for all images
-  //add an indicator
-  indicators += `
-    <button type="button" data-bs-target="#${carouselId}" data-bs-slide-to="${index}"
-      class="${index === 0 ? "active" : ""}">
-    </button>
-  `;
+  renderQuest(quest);
+})();
 
-  //and add a slide
-  slides += `
-    <div class="carousel-item ${index === 0 ? "active" : ""}">
-      <img src="${img}" class="d-block w-100">
-    </div>
-  `;
+function renderQuest(q) {//render the quest
+  const carousel = document.querySelector("#carouselContainer");
+  const indicators = document.querySelector("#carouselIndicators");
+
+  if (!carousel || !indicators) return; //if the carousel or indicators don't exist stop rendering
+
+  //clean out carousel
+  carousel.innerHTML = "";
+  indicators.innerHTML = "";
+
+  //fill these id's with quest data
+  document.querySelector("#title").textContent = q.title;
+  document.querySelector("#host").textContent = q.host;
+  document.querySelector("#reward").textContent = q.reward;
+  document.querySelector("#difficulty").textContent = q.difficulty;
+  document.querySelector("#description").textContent = q.description;
+
+  const mainImg = document.querySelector("#thumbnail");
+  if (mainImg) mainImg.src = q.thumbnail;
+
+  //for every image create a slide and indicator
+  (q.images || []).forEach((src, index) => {
+
+    // Slide
+    const item = document.createElement("div");
+    item.classList.add("carousel-item");
+    if (index === 0) item.classList.add("active");
+
+    const img = document.createElement("img");
+    img.src = src;
+    img.classList.add("d-block", "w-100");
+
+    item.appendChild(img);
+    carousel.appendChild(item);
+
+    // Indicator
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("data-bs-target", "#carouselContainerContainer");
+    button.setAttribute("data-bs-slide-to", index);
+
+    if (index === 0) button.classList.add("active");
+
+    indicators.appendChild(button);
+  });
+}
+
+//create bootstrap carousel
+const carouselEl = document.querySelector("#carouselContainerContainer");
+
+new bootstrap.Carousel(carouselEl, {
+  interval: false,
+  ride: false,
+  pause: true,
+  wrap: false
 });
-
-//inside the div add everything
-container.innerHTML = `
-<div id="${carouselId}" class="carousel slide">
-
-  <div class="carousel-indicators">
-    ${indicators}
-  </div>
-
-  <div class="carousel-inner">
-    ${slides}
-  </div>
-
-  <button class="carousel-control-prev" type="button" data-bs-target="#${carouselId}" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon"></span>
-  </button>
-
-  <button class="carousel-control-next" type="button" data-bs-target="#${carouselId}" data-bs-slide="next">
-    <span class="carousel-control-next-icon"></span>
-  </button>
-
-</div>
-`;

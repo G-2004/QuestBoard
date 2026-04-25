@@ -6,6 +6,7 @@ I think that so far the project is going well. I am disatisfied with the current
 INTENTS
     <i class="fa-solid fa-skull"></i> make replace X in difficulty
     find a nice font
+    locate all instances of carouselContainerContainer Id and references to it and replace with a better name
     allow user to scale and translate their image before sending it into html as a card
     resize sideNav button
     proceeding form becoming more centered
@@ -57,3 +58,5 @@ INTENTS
     -added ability to add additional images for description page
     -added bootstrap framework
     -added bootstrap carousel
+    -removed local storage quest from project
+    -replaced local storage with indexed database
