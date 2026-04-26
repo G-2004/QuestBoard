@@ -3,3 +3,9 @@ body {
     font-family: sans-serif;
     background-color: rgb(211, 194, 173);
 }
+
+/* THIS IS NOT FOR questDetails MOVE LATER*/
+canvas {
+    max-width: 100%;
+    background-color: rgb(146, 146, 224);
+}

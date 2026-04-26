@@ -1,0 +1,26 @@
+<head> 
+    <link rel="stylesheet" href="assets/css/questDetails.css">
+    <link rel="stylesheet" href="assets/css/defaultNav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> <!-- A library I use in coding for foundry vtt with nice in text icons -->
+    <meta charset="UTF-8"> <title>Adventure Atlas - Map</title> 
+    <meta name="description" content="A web application for table top game masters and players for hosting quest boards alongside having the niche feature to route between player location and quest location.">
+    <link rel="icon" href="assets/images/favicon.png"> 
+</head>
+
+<body>
+    <!-- NavBar / Useful buttons -->
+    <div class="headerBar">
+        <div class="sideNav left">&#9776;</div> <!-- &#9776; is the hamburger menu icon -->
+        <a href="index.html"><img class="siteLogo" src="assets/images/logo.png" alt="Map Quest Logo"></a>
+    </div>
+
+    <div id="controls">
+        <input id="startNode" placeholder="Start Node (e.g. A)">
+        <input id="endNode" placeholder="End Node (e.g. D)">
+        <button id="runPath">Find Path</button>
+    </div>
+
+    <canvas id="map"></canvas>
+
+    <script src="assets/javascript/questMap.js"></script> <!-- Javascript that inserts quest cards into cardHolder -->
+</body>

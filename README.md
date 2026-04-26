@@ -4,18 +4,20 @@ Project 3 REFLECTION
 I think that so far the project is going well. I am disatisfied with the current logo and seeking a better name for the project however other than that I believe things are going well. The remainder of this project I believe will focus on more control over cards for the user, cleaner css for the description page, and adding the actual mapping page and javaScript. Some "Technologies" I used in this project are the font-awesome library, bootstrap framework, JSON files, javaScript, HTML, and CSS. I do think I will be challenged to complete the mapping section due to delays caused by my ER visit however I belive at this point that it is completable. I'm having a great deal of fun making this site so far. 
 
 INTENTS
-    <i class="fa-solid fa-skull"></i> make replace X in difficulty
-    find a nice font
-    locate all instances of carouselContainerContainer Id and references to it and replace with a better name
-    allow user to scale and translate their image before sending it into html as a card
-    resize sideNav button
-    proceeding form becoming more centered
-    come up with schemas for organizing css files and README
-    mapping section
-    save progress while navigating site unless browser is fully closed
-    increase readability of favicon
-    NOTED ISSUE: highlighting text in the form then dragging mouse out of form before releasing closes form
-    header logo needs to shrink when zooming in to allow other parts to fit on screen.
+    -create mapping page
+    -create ability for quest cards to be removed individually
+    -cards should become reorderable
+    -cards should have fields editable after creation
+    -<i class="fa-solid fa-skull"></i> make replace X in difficulty
+    -find a nice font
+    -locate all instances of carouselContainerContainer Id and references to it and replace with a better name
+    -allow user to scale and translate their image before sending it into html as a card
+    -resize sideNav button
+    -proceeding form becoming more centered
+    -come up with schemas for organizing css files and README
+    -increase readability of favicon
+    -NOTED ISSUE: highlighting text in the form then dragging mouse out of form before releasing closes form
+    -header logo needs to shrink when zooming in to allow other parts to fit on screen.
 
 *PROJECT 3
 **3/26/2026
@@ -60,3 +62,14 @@ INTENTS
     -added bootstrap carousel
     -removed local storage quest from project
     -replaced local storage with indexed database
+##############################################################################################################
+*PROJECT 4
+**4/24/2026
+    -started adding a*
+##############################################################################################################
+**4/25/2026 - gitUpdate
+    -completed adding basic a* pathfinding algorithm
+    -added page that let's you test a* with a start and end and highlights all nodes and connections in final/best path to the goal
+    -also added script to draw the nodes connections and stuff
+    -wrote extensive annotations on a* in questMap.js
+    -starting in this entry an entry in readme with '- gitUpdate' indicates I uploaded something to gitHub on that day
