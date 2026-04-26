@@ -4,6 +4,8 @@ Project 3 REFLECTION
 I think that so far the project is going well. I am disatisfied with the current logo and seeking a better name for the project however other than that I believe things are going well. The remainder of this project I believe will focus on more control over cards for the user, cleaner css for the description page, and adding the actual mapping page and javaScript. Some "Technologies" I used in this project are the font-awesome library, bootstrap framework, JSON files, javaScript, HTML, and CSS. I do think I will be challenged to complete the mapping section due to delays caused by my ER visit however I belive at this point that it is completable. I'm having a great deal of fun making this site so far. 
 
 INTENTS
+    -fix the freaking nodes highlighting before they are visually reached in questMap.js
+    -fix that when dragging over non canvas elements after starting on canvas changes stop visually occuring
     -create mapping page
     -create ability for quest cards to be removed individually
     -cards should become reorderable
@@ -73,3 +75,13 @@ INTENTS
     -also added script to draw the nodes connections and stuff
     -wrote extensive annotations on a* in questMap.js
     -starting in this entry an entry in readme with '- gitUpdate' indicates I uploaded something to gitHub on that day
+    -replaced prior rendering system by (adding panning and zoom)
+    -created camera that tells canvas area what to render and where and what size
+    -added css to buttons on mapping page
+    -canvas now takes up whole screen
+    -z index makes things render above canvas
+##############################################################################################################
+**4/26/2026 - gitUpdate
+    -added animation to rendering path
+    -to select a path to work out there is now a path mode in path mode you click a start node and an end node
+    -a bunch of other junk in questMap.js I think

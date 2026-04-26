@@ -7,6 +7,8 @@
         color: rgb(235, 231, 217);
         padding-left: 2%;
         padding-right: 2%;
+        position: relative; /*this is entirely for the map page*/
+        z-index: 10; /*this is entirely for the map page*/
     }
 
     .sideNav {

@@ -1,0 +1,66 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* disables page scroll */
+    height: 100%;
+    font-family: sans-serif;
+    background-color: rgb(211, 194, 173);
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    display: block;
+    background-color: rgb(37, 31, 61);
+}
+
+.userButtons{
+    display: flex;
+    bottom: 20px;
+    left: 0px;
+    width: 100vw;
+    justify-content: center;
+    gap: 4px;
+    position: fixed;
+    z-index: 5;
+}
+.userButtonDefault{
+    box-sizing: border-box;
+    width: 120px;
+    height: 120px;
+    background-color: rgba(113, 130, 150, 0.80);
+    border: 5px;
+    border-style: solid;
+    border-color: rgb(161, 230, 232);
+    border-radius: 15px;
+}
+.fileButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: aliceblue;
+    font-size: 32pt;
+
+    cursor: pointer;
+    user-select: none;
+}
+.exitButton {
+    position: absolute;
+    top: 110%;/* render below navbar */
+    right: 20px;
+    z-index: 10;
+
+    font-size: 24px;
+    color: white;
+    background: rgba(0,0,0,0.6);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+
+    display: none;
+}
