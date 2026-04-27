@@ -6,7 +6,6 @@ I think that so far the project is going well. I am disatisfied with the current
 INTENTS
     -fix the freaking nodes highlighting before they are visually reached in questMap.js
     -fix that when dragging over non canvas elements after starting on canvas changes stop visually occuring
-    -create mapping page
     -create ability for quest cards to be removed individually
     -cards should become reorderable
     -cards should have fields editable after creation
@@ -84,4 +83,8 @@ INTENTS
 **4/26/2026 - gitUpdate
     -added animation to rendering path
     -to select a path to work out there is now a path mode in path mode you click a start node and an end node
+    -user can now add and connect nodes (they are not saved on re-load yet)
+    -user can now delete nodes (deleting node also deletes its connections)
+    -began organizing js functions in questMap.js
+    -can now pan over buttons without causing issues
     -a bunch of other junk in questMap.js I think

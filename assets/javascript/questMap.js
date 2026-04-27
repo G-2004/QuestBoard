@@ -1,17 +1,92 @@
+//########################################################
+//########################################################
+//######################################################## Global Variables
+//########################################################
+//########################################################
+const regionModifiers = { //currently these are being assigned here. MAKE USER MADE LATER.
+  floweringmeadow: 1,
+  dragonlands: 3,
+  sandyhollow: 2
+};
+const camera = {
+  x: 0,
+  y: 0,
+  zoom: 1
+};
+const mapContainer = document.querySelector("#mapContainer"); //contains both the canvas and ui buttons
 const nodes = new Map(); // id - node
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
+const animSpeed = 0.01; // adjust smoothness
+//button elements
+const addNodeBtn = document.querySelector("#addNode");
+const connectBtn = document.querySelector("#addConnect");
+const pathBtn = document.querySelector("#runPath");
+const delNodeBtn = document.querySelector("#deleteNode");
+//...
 let selectedStart = null;//user selected path start
 let selectedGoal = null; //user selected path end
 let mapImage = new Image(); //the actual image used for the map
 let currentPath = []; //a variable to hold the current best path to the goal
 let animatedPath = [];
-let animationIndex = 0;
 let animSegment = 0;
 let animT = 0; // 0 to 1 along current segment
-const animSpeed = 0.01; // adjust smoothness
+let pendingConnectionNode = null;
+let mode = "none"; // "add" | "connect" | "path" | "delete" | "none"
+let dragging = false; //if we are moving the screen
+let last = { x: 0, y: 0 };//where the mouse was last frame?
+//ui states
 let pathMode = false;
+let addMode = false;
+let connectMode = false;
+let deleteMode = false;
+//size canvas to window
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
+
+//########################################################
+//########################################################
+//######################################################## Pathing
+//########################################################
+//########################################################
+
+//######################################################## get the id of all connected nodes and the cost to move there
+function getNeighbors(node) {
+  return node.connections.map(c => ({ //make a map out of all connections 
+  // each mapped connection is linked to its cost and node id
+    node: nodes.get(c.id), //current connection node
+    cost: c.cost //current connection cost
+  }));
+}
+
+//######################################################## get the cost to move to a given node from a given node
+function getTraversalCost(fromNode, toNode, baseCost) {
+  const regionFactor = regionModifiers[toNode.region] || 1; //get cost of region of node you are moving to or 1
+  return baseCost * regionFactor; //multiply base cost by region difficulty/problems (maybe change to add?)
+}
+
+//######################################################## CURRENTLY USELESS ... but used
+function heuristic(a, b) {
+  return 0;
+  //const dx = a.x - b.x;
+  //const dy = a.y - b.y;
+  //return Math.sqrt(dx * dx + dy * dy); //pythagorean theorem
+}
+
+//######################################################## return the path we took to reach the goal
+function reconstructPath(cameFrom, current) {
+  const path = [current.id]; //give goal node as start of path // goal is the active node
+
+  while (cameFrom.has(current.id)) {
+    current = cameFrom.get(current.id);//current node is node we cameFrom
+    path.push(current.id);//add new current to end of array
+  }
+
+  return path.reverse(); //return the array but flipped/backwards
+}
+
+//######################################################## create a node at a given location
 function createNode(id, region, x, y) {
   nodes.set(id, {//in nodes find or create node with matching id
     id, //assign an id
@@ -22,6 +97,7 @@ function createNode(id, region, x, y) {
   });
 }
 
+//######################################################## connect two nodes and set the cost to move between them
 function connect(aId, bId, cost) {
   const a = nodes.get(aId); //point 1
   const b = nodes.get(bId); // point 2
@@ -30,26 +106,7 @@ function connect(aId, bId, cost) {
   b.connections.push({ id: aId, cost });//give node B a connection to node A with cost
 }
 
-function getNeighbors(node) {
-  return node.connections.map(c => ({ //make a map out of all connections 
-  // each mapped connection is linked to its cost and node id
-    node: nodes.get(c.id), //current connection node
-    cost: c.cost //current connection cost
-  }));
-}
-
-function getTraversalCost(fromNode, toNode, baseCost) {
-  const regionFactor = regionModifiers[toNode.region] || 1; //get cost of region of node you are moving to or 1
-  return baseCost * regionFactor; //multiply base cost by region difficulty/problems (maybe change to add?)
-}
-
-//based on distance on canvas between two nodes return estimate of difficulty
-function heuristic(a, b) {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  return Math.sqrt(dx * dx + dy * dy); //pythagorean theorem
-}
-
+//######################################################## determine best route to goal node from start node
 function aStar(startId, goalId) {
   const start = nodes.get(startId); //id of start node
   const goal = nodes.get(goalId); // id of end node
@@ -107,50 +164,39 @@ function aStar(startId, goalId) {
 
   return null; // no path to goal from start
 }
+//########################################################
+//########################################################
+//######################################################## Camera
+//########################################################
+//########################################################
 
-function reconstructPath(cameFrom, current) {
-  const path = [current.id]; //give goal node as start of path // goal is the active node
+//######################################################## adjusts camera zoom level
+canvas.addEventListener("wheel", (e) => {//when scrolling over canvas item
+  e.preventDefault();//do not scroll the page as normal
 
-  while (cameFrom.has(current.id)) {//???
-    current = cameFrom.get(current.id);//current node is node we cameFrom
-    path.push(current.id);//add new current to end of array
-  }
+  const zoomFactor = 1.1;//how much to change the zoom by. 10%
+  const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor; // deltaY is scroll direction // if deltaY greater than 0 zoom in else zoom out
 
-  return path.reverse(); //return the array but flipped/backwards
-}
+  // mouse position in screen space
+  const mouseX = e.clientX;
+  const mouseY = e.clientY;
 
-const regionModifiers = { //currently these are being assigned here. MAKE USER MADE LATER.
-  floweringmeadow: 1,
-  dragonlands: 3,
-  sandyhollow: 2
-};
+  // convert mouse position to world coordinates BEFORE zoom
+  const worldX = camera.x + mouseX / camera.zoom;
+  const worldY = camera.y + mouseY / camera.zoom;
 
-function drawEdge(a, b) { //connects two given nodes
-  ctx.beginPath();// start path
-  ctx.moveTo(a.x, a.y); //set coords
-  ctx.lineTo(b.x, b.y); //from coords make line to b coords
-  ctx.stroke(); //draw that line
-}
+  const newZoom = camera.zoom * direction; //take current zoom and multiply by 1.1 or 0.91 (direction)
 
-function drawNode(node) { //draws the location of given node
-  ctx.beginPath();
-  ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
-  ctx.fill();
-}
+  // adjust camera so zoom focuses on mouse position
+  camera.x = worldX - mouseX / newZoom;
+  camera.y = worldY - mouseY / newZoom;
 
-//size canvas to window
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+  camera.zoom = newZoom; //update zoom level
 
-//run through a* with given start and end then render path
+  render();//render everything
+});
 
-//coordinates and zoom of the camera
-const camera = {
-  x: 0,
-  y: 0,
-  zoom: 1
-};
-
+//######################################################## returns x and y location on map as an x and y on the screen (hard to describe)
 function worldToScreen(x, y) {//How far is this world point from the camera
   return {
     x: (x - camera.x) * camera.zoom, 
@@ -158,6 +204,7 @@ function worldToScreen(x, y) {//How far is this world point from the camera
   };
 }
 
+//######################################################## update background image based on user upload
 document.querySelector("#mapUpload").addEventListener("change", (e) => { //if a file is uploaded to #mapUpload
   const file = e.target.files[0]; // get that file
   const url = URL.createObjectURL(file); //turn file into usable url
@@ -169,6 +216,71 @@ document.querySelector("#mapUpload").addEventListener("change", (e) => { //if a 
   mapImage.src = url; //mapImage is the image uploaded now
 });
 
+//######################################################## tell code we are panning when holding down mouse
+mapContainer.addEventListener("mousedown", (e) => {
+  dragging = true; //we are actively moving
+  
+  //horizontal and vertical position of mouse
+  last.x = e.clientX;
+  last.y = e.clientY;
+});
+
+//######################################################## if the mouse has been released from being held down we are not panning the camera
+mapContainer.addEventListener("mouseup", () => dragging = false);
+
+//######################################################## pan the camera when the mouse is being held down and moved
+mapContainer.addEventListener("mousemove", (e) => { //when the mouse moves
+  if (!dragging) return; //if we are dragging continue else return
+
+  //delta of x/y //how far has the mouse moved since last frame //divide by zoom cause it changes the mapUnits to move by. (basically make zoom matter when panning)
+  const dx = (e.clientX - last.x) / camera.zoom;
+  const dy = (e.clientY - last.y) / camera.zoom;
+
+  //take the current camera x/y and move up/down left/right based on change/delta
+  camera.x -= dx;
+  camera.y -= dy;
+
+  //last position is now current mouse position
+  last.x = e.clientX;
+  last.y = e.clientY;
+
+  //render everything
+  render();
+});
+//########################################################
+//########################################################
+//######################################################## Draw
+//########################################################
+//########################################################
+
+//######################################################## Draws the connection between two points
+function drawEdge(a, b) { //connects two given nodes
+  ctx.beginPath();// start path
+  ctx.moveTo(a.x, a.y); //set coords
+  ctx.lineTo(b.x, b.y); //from coords make line to b coords
+  ctx.stroke(); //draw that line
+}
+
+//######################################################## Draws a given node
+function drawNode(node) { //draws the location of given node
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+//######################################################## Draws a line segment t being the completion percentage (1 = done | 0 = none)
+function drawAnimatedEdge(a, b, t) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+
+  const x = a.x + (b.x - a.x) * t;
+  const y = a.y + (b.y - a.y) * t;
+
+  ctx.lineTo(x, y);
+  ctx.stroke();
+}
+
+//######################################################## Draw all nodes and connections taking camera position into account
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);//clear canvas
 
@@ -188,8 +300,10 @@ function render() {
     node.connections.forEach(c => {//for every connection to that node
       const target = nodes.get(c.id);//current node to connect to 
 
-      ctx.strokeStyle = "white"; // draw in white
-      drawEdge(node, target); //run drawEdge
+      if (node.id < target.id) { //sort by uuid to prevent drawing a connection twice
+        ctx.strokeStyle = "white";
+        drawEdge(node, target);
+      }
     });
   });
 
@@ -220,12 +334,11 @@ function render() {
       currentPath.indexOf(node.id) !== -1 &&
       currentPath.indexOf(node.id) < animSegment;
 
-    const isCurrent =
-      node.id === currentPath[animSegment];
+    const isCurrent = node.id === currentPath[animSegment];
 
-    const isNext =
-      node.id === currentPath[animSegment + 1];
-    if (node === selectedStart) ctx.fillStyle = "blue"; //if this is selected start draw in blue
+    const isNext = node.id === currentPath[animSegment + 1];
+    if (node === pendingConnectionNode) ctx.fillStyle = "green";
+    else if (node === selectedStart) ctx.fillStyle = "blue"; //if this is selected start draw in blue
     else if (node === selectedGoal) ctx.fillStyle = "yellow"; //if this is selected end draw in yellow
     else if (isCompleted) ctx.fillStyle = "red";
     else if (isCurrent || isNext) ctx.fillStyle = "red"; //if this node is in the animated path draw in red
@@ -236,103 +349,13 @@ function render() {
   ctx.restore();//restore from save settings
 }
 
-//panning
-canvas.addEventListener("mousedown", (e) => {
-  dragging = true; //we are actively moving
-  
-  //horizontal and vertical position of mouse
-  last.x = e.clientX;
-  last.y = e.clientY;
-});
-
-canvas.addEventListener("mouseup", () => dragging = false);//we are no longer moving
-
-canvas.addEventListener("mousemove", (e) => { //when the mouse moves
-  if (!dragging) return; //if we are dragging continue else return
-
-  //delta of x/y //how far has the mouse moved since last frame //divide by zoom cause it changes the mapUnits to move by. (basically make zoom matter when panning)
-  const dx = (e.clientX - last.x) / camera.zoom;
-  const dy = (e.clientY - last.y) / camera.zoom;
-
-  //take the current camera x/y and move up/down left/right based on change/delta
-  camera.x -= dx;
-  camera.y -= dy;
-
-  //last position is now current mouse position
-  last.x = e.clientX;
-  last.y = e.clientY;
-
-  //render everything
-  render();
-});
-
-//zoom
-canvas.addEventListener("wheel", (e) => {//when scrolling over canvas item
-  e.preventDefault();//do not scroll the page as normal
-
-  const zoomFactor = 1.1;//how much to change the zoom by. 10%
-  const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor; // deltaY is scroll direction // if deltaY greater than 0 zoom in else zoom out
-
-  // mouse position in screen space
-  const mouseX = e.clientX;
-  const mouseY = e.clientY;
-
-  // convert mouse position to world coordinates BEFORE zoom
-  const worldX = camera.x + mouseX / camera.zoom;
-  const worldY = camera.y + mouseY / camera.zoom;
-
-  const newZoom = camera.zoom * direction; //take current zoom and multiply by 1.1 or 0.91 (direction)
-
-  // adjust camera so zoom focuses on mouse position
-  camera.x = worldX - mouseX / newZoom;
-  camera.y = worldY - mouseY / newZoom;
-
-  camera.zoom = newZoom; //update zoom level
-
-  render();//render everything
-});
-
-//enables tooltips
-document.addEventListener("DOMContentLoaded", () => {
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-
-  tooltipTriggerList.forEach(el => {
-    new bootstrap.Tooltip(el);
-  });
-});
-
-function getMouseWorldPos(e) {
-  const rect = canvas.getBoundingClientRect();//coordinates and size of canvas
-
-  const screenX = e.clientX - rect.left; //take X of mouse and subtract how far that is from the canvas x
-  const screenY = e.clientY - rect.top;
-
-  return { //undo zoom and pan to correct x/y position and return that
-    x: screenX / camera.zoom + camera.x,
-    y: screenY / camera.zoom + camera.y
-  };
-}
-
-function getNodeAt(x, y) { // x/y are the x y of the page not canvas
-  const radius = 10; // same as drawNode
-
-  for (let node of nodes.values()) { //for everything in nodes.values (every node)
-    const dx = node.x - x; //take x coordinate of node and subtract x of mouse to get distance
-    const dy = node.y - y;
-
-    if (Math.sqrt(dx * dx + dy * dy) <= radius) { //if the node is within the radius then return this node
-      return node;
-    }
-  }
-
-  return null;//we did not click a node
-}
-
+//######################################################## clear previous path and start animation
 function animatePath() {
   animSegment = 0;//how many segmants have we gone through
   animT = 0;
   animatedPath = [];
 
+  //######################################################## animate the path being taken to get to the goal from start
   function step() {
     if (!currentPath || currentPath.length < 2) return; //no path no animation
 
@@ -359,126 +382,331 @@ function animatePath() {
     }
 
     render();//render everything
-    requestAnimationFrame(step); //do it again
+    requestAnimationFrame(step); //when screen refreshes step again
   }
 
   step();
 }
+//########################################################
+//########################################################
+//######################################################## Mode
+//########################################################
+//########################################################
 
-document.querySelector("#runPath").addEventListener("click", () => {
-  pathMode = !pathMode;
+//######################################################## CURRENTLY UNUSED
+function setMode(newMode) {
+  mode = (mode === newMode) ? "none" : newMode;
+  updateMode()
+}
 
-  // reset state when entering
-  if (pathMode) {
-    selectedStart = null;
-    selectedGoal = null;
-    currentPath = [];
-    animatedPath = [];
-    toggleExitButton(true);
-  }
-  else {
-    toggleExitButton(false);
-  }
+//######################################################## resets all modes into the inactive state (false)
+function resetModes() { //generate a universally unique Id
+  pathMode = false;
+  addMode = false;
+  connectMode = false;
+  deleteMode = false;
+}
 
-  updateCursor();
-  render();
-});
+//######################################################## set existance of class on button based on whether that mode is active
+function updateModeUI() {
+  addNodeBtn.classList.toggle("buttonActive", addMode);
+  connectBtn.classList.toggle("buttonActive", connectMode);
+  pathBtn.classList.toggle("buttonActive", pathMode);
+  delNodeBtn.classList.toggle("buttonActive", deleteMode);
+}
 
-canvas.addEventListener("click", (e) => {
-  if (!pathMode) return;
-
-  const pos = getMouseWorldPos(e);
-  const node = getNodeAt(pos.x, pos.y);
-
-  if (!node) return;
-
-  if (!selectedStart) {
-    selectedStart = node;
-  } else if (!selectedGoal) {
-    selectedGoal = node;
-
-    const result = aStar(selectedStart.id, selectedGoal.id);
-    currentPath = result || [];
-
-    animatePath();
-  }
-
-  render();
-});
-
-//exit path mode
+//######################################################## press the escape key to exit pathMode
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") exitPathMode();
 });
 
+//######################################################## turn off/exit pathMode
 function exitPathMode() {
   pathMode = false;
 
-  selectedStart = null;
-  selectedGoal = null;
-  currentPath = [];
-  animatedPath = [];
-  animationIndex = 0;
+  clearPath();
 
   updateCursor();
   toggleExitButton(false);
   render();
 }
 
+//######################################################## when clicking addNode button change addMode to on or off mode (turn other modes off too)
+document.querySelector("#addNode").addEventListener("click", () => {
+  const wasActive = addMode; //save current state t/f
+
+  resetModes();//set all modes to false
+
+  addMode = !wasActive; // flip state from t to f or vise versa
+
+  // reset state when entering
+
+  updateMode()
+});
+
+//######################################################## when clicking addConnect button change connectMode to on or off mode (turn other modes off too)
+document.querySelector("#addConnect").addEventListener("click", () => {
+  const wasActive = connectMode; //save current state t/f
+
+  resetModes();//set all modes to false
+
+  connectMode = !wasActive; // flip state from t to f or vise versa
+
+  // reset state when entering
+
+  updateMode()
+});
+
+//######################################################## when clicking deleteNode button change deleteMode to on or off mode (turn other modes off too)
+document.querySelector("#deleteNode").addEventListener("click", () => {
+  const wasActive = deleteMode; //save current state t/f
+
+  resetModes();//set all modes to false
+  node = 
+
+  deleteMode = !wasActive; // flip state from t to f or vise versa
+
+  updateMode()
+});
+
+//######################################################## when clicking runPath button change pathMode to on or off mode (turn other modes off too)
+document.querySelector("#runPath").addEventListener("click", () => {
+  const wasActive = pathMode; //save current state t/f
+
+  resetModes();//set all modes to false
+
+  pathMode = !wasActive; // flip state from t to f or vise versa
+
+  // reset state when entering
+  if (pathMode) {
+    clearPath();
+    toggleExitButton(true);
+  }
+  else {
+    toggleExitButton(false);
+  }
+
+  updateMode();
+});
+//######################################################## delete a clicked node and its connections
+function deleteNode(nodeId) {
+  const node = nodes.get(nodeId);
+  if (!node) return;
+
+  // remove references from neighbors
+  node.connections.forEach(c => {
+    const neighbor = nodes.get(c.id);
+    if (!neighbor) return;
+
+    neighbor.connections = neighbor.connections.filter(
+      conn => conn.id !== nodeId
+    );
+  });
+
+  // remove the node itself
+  nodes.delete(nodeId);
+}
+
+//######################################################## based on active mode add, delete, connect, etc.
+canvas.addEventListener("click", (e) => {
+
+  if(deleteMode){
+    const node = getClickedNode(e);
+
+    if (!node) return;
+
+    const deletedId = node.id;
+
+    deleteNode(deletedId);
+
+    // clear selections if deleted
+    if (selectedStart === node) selectedStart = null;
+    if (selectedGoal === node) selectedGoal = null;
+    if (pendingConnectionNode === node) {
+      pendingConnectionNode = null;
+    }
+
+    // invalidate path if it used this node
+    if (currentPath.includes(deletedId)) {
+      currentPath = [];
+      animatedPath = [];
+      animSegment = 0;
+      animT = 0;
+    }
+
+    render();
+  }
+  else if(addMode){
+    const pos = getMouseWorldPos(e);
+    const x = pos.x
+    const y = pos.y
+    const id = generateId();
+
+    createNode(id, "dragonlands", x, y);
+
+    render();
+  }
+  else if (pathMode){
+
+    const node = getClickedNode(e);
+
+    if (!node) return;
+
+    //set start of path
+    if (!selectedStart) {
+      selectedStart = node;
+      selectedGoal = null;
+      currentPath = [];
+      animatedPath = [];
+    } 
+    //set end of path
+    else if (!selectedGoal) {
+      selectedGoal = node;
+
+      const result = aStar(selectedStart.id, selectedGoal.id);
+      currentPath = result || [];
+
+      animatePath(); //render the path
+    }
+    //start new path
+    else {
+      selectedStart = node;
+      selectedGoal = null;
+      currentPath = [];
+      animatedPath = [];
+    }
+
+    render();
+  }
+  else if (connectMode) {
+
+    const node = getClickedNode(e);
+
+    if (!node) return;
+
+    // FIRST CLICK
+    if (!pendingConnectionNode) {
+      pendingConnectionNode = node;
+      render();
+      return;
+    }
+
+    // SECOND CLICK
+    const nodeA = pendingConnectionNode;
+    const nodeB = node;
+
+    // prevent self-connection
+    if (nodeA === nodeB) {
+      pendingConnectionNode = null;
+      render();
+      return;
+    }
+
+    // prevent duplicate connection
+    const alreadyConnected = nodeA.connections.some(c => c.id === nodeB.id);
+
+    if (!alreadyConnected) {
+      connect(nodeA.id, nodeB.id, 5); // default cost
+    }
+
+    // reset for next connection
+    pendingConnectionNode = null;
+
+    render();
+  }
+  else{
+    return
+  }
+});
+
+//######################################################## clicking the exitPathMode (x) button exits path mode
 document.querySelector("#exitPathMode")
   .addEventListener("click", exitPathMode);
 
+//######################################################## whether to display the exitPathMode (x) button
 function toggleExitButton(show) {
   const el = document.querySelector("#exitPathMode");
   el.style.display = show ? "block" : "none";
 }
 
+//######################################################## update cursor style depending on mode
 function updateCursor() {
-  canvas.style.cursor = pathMode ? "crosshair" : "default";
+  canvas.style.cursor = pathMode || addMode || connectMode || deleteMode ? "crosshair" : "default";
+}
+//########################################################
+//########################################################
+//######################################################## Other
+//########################################################
+//########################################################
+
+//######################################################## enables bootstrap tooltips
+document.addEventListener("DOMContentLoaded", () => {
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+
+  tooltipTriggerList.forEach(el => {
+    new bootstrap.Tooltip(el);
+  });
+});
+
+//######################################################## returns position of the mouse on the screen
+function getMouseWorldPos(e) {
+  const rect = canvas.getBoundingClientRect();//coordinates and size of canvas
+
+  const screenX = e.clientX - rect.left; //take X of mouse and subtract how far that is from the canvas x
+  const screenY = e.clientY - rect.top;
+
+  return { //undo zoom and pan to correct x/y position and return that
+    x: screenX / camera.zoom + camera.x,
+    y: screenY / camera.zoom + camera.y
+  };
 }
 
-function drawAnimatedEdge(a, b, t) {
-  ctx.beginPath();
-  ctx.moveTo(a.x, a.y);
+//######################################################## returns node at given coordinates (often mouse position)
+function getNodeAt(x, y) { // x/y are the x y of the page not canvas
+  const radius = 10; // same as drawNode
 
-  const x = a.x + (b.x - a.x) * t;
-  const y = a.y + (b.y - a.y) * t;
+  for (let node of nodes.values()) { //for everything in nodes.values (every node)
+    const dx = node.x - x; //take x coordinate of node and subtract x of mouse to get distance
+    const dy = node.y - y;
 
-  ctx.lineTo(x, y);
-  ctx.stroke();
+    if (Math.sqrt(dx * dx + dy * dy) <= radius) { //if the node is within the radius then return this node
+      return node;
+    }
+  }
+
+  return null;//we did not click a node
 }
 
+//######################################################## generates a universally unique Id
+function generateId() { //generate a universally unique Id
+  return crypto.randomUUID();
+}
 
+//######################################################## returns node at mouse position
+function getClickedNode(e) {
+  const pos = getMouseWorldPos(e);
+  return getNodeAt(pos.x, pos.y);
+}
 
+//######################################################## clears the optimal path from start to goal; also resets start and goal locations to null
+function clearPath(){
+  selectedStart = null;
+  selectedGoal = null;
+  currentPath = [];
+  animatedPath = [];
+}
 
+//######################################################## runs other functions to render page and update cursor style
+function updateMode(){
+  updateCursor();
+  updateModeUI();
+  render();
+}
+//########################################################
+//########################################################
+//######################################################## Run on start
+//########################################################
+//########################################################
 
-//Temporary Scripted Creation
-createNode("A", "floweringmeadow", 100, 200);
-createNode("B", "dragonlands", 300, 250);
-createNode("C", "dragonlands", 400, 250);
-createNode("D", "dragonlands", 800, 250);
-createNode("E", "dragonlands", 200, 280);
-createNode("F", "dragonlands", 900, 280);
-createNode("G", "dragonlands", 1100, 150);
-createNode("H", "dragonlands", 1200, 250);
-createNode("I", "dragonlands", 1300, 150);
-createNode("J", "dragonlands", 1400, 250);
-createNode("K", "dragonlands", 1500, 150);
-
-connect("A", "B", 5);
-connect("A", "E", 5);
-connect("B", "E", 5);
-connect("B", "C", 5);
-connect("C", "D", 5);
-connect("F", "D", 5);
-connect("F", "E", 5);
-connect("F", "G", 5);
-connect("H", "G", 5);
-connect("H", "I", 5);
-connect("J", "I", 5);
-connect("J", "K", 5);
-
-console.log(nodes.get("A"));
-let dragging = false; //if we are moving the screen
-let last = { x: 0, y: 0 };//where the mouse was last ? frame?
+//######################################################## render on starting page
 render();// render on loading the page

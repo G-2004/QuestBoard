@@ -16,25 +16,52 @@
         <div id="exitPathMode" class="exitButton">X</div>
     </div>
 
-    <div class="userButtons">
-        <button class="userButtonDefault fileButton" id="runPath"
-        data-bs-toggle="tooltip"
-        data-bs-title="Navigate from one node to another"
-        >
-        <i class="fa-solid fa-map-location-dot"></i>
-        </button>
+    <div id="mapContainer">
+        <div class="userButtons">
+            <button class="userButtonDefault modeButton" id="runPath"
+            data-bs-toggle="tooltip"
+            data-bs-title="Navigate from one node to another"
+            >
+            <i class="fa-solid fa-map-location-dot"></i>
+            </button>
 
-        <input type="file" id="mapUpload" hidden >
-        <label for="mapUpload" 
-        class="userButtonDefault fileButton"
-        data-bs-toggle="tooltip"
-        data-bs-title="Upload a background image"
-        >
-            <i class="fa-solid fa-image"></i>
-        </label>
+            <input type="file" id="mapUpload" hidden >
+            <label for="mapUpload" 
+            class="userButtonDefault fileButton"
+            data-bs-toggle="tooltip"
+            data-bs-title="Upload a background image"
+            >
+                <i class="fa-solid fa-image"></i>
+            </label>
+
+            <button class="userButtonDefault modeButton" id="addNode"
+            data-bs-toggle="tooltip"
+            data-bs-title="Add a new navigation node"
+            >
+            <i class="fa-solid fa-plus"></i>
+            </button>
+
+            <button class="userButtonDefault modeButton" id="addConnect"
+            data-bs-toggle="tooltip"
+            data-bs-title="Connect two nodes"
+            >
+
+            <i class="fa-solid fa-plus"></i>
+            <i class="fa-solid fa-share-nodes"></i>
+            
+            </button>
+            <button class="userButtonDefault modeButton" id="deleteNode"
+            data-bs-toggle="tooltip"
+            data-bs-title="Delete a node"
+            >
+
+            <i class="fa-solid fa-trash"></i>
+            
+            </button>
+        </div>
+            
+        <canvas id="map"></canvas>
     </div>
-        
-    <canvas id="map"></canvas>
 
     <script src="assets/javascript/questMap.js"></script> <!-- Javascript that inserts quest cards into cardHolder -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> <!-- Bootstrap -->
