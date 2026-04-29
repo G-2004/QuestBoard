@@ -4,8 +4,7 @@ Project 3 REFLECTION
 I think that so far the project is going well. I am disatisfied with the current logo and seeking a better name for the project however other than that I believe things are going well. The remainder of this project I believe will focus on more control over cards for the user, cleaner css for the description page, and adding the actual mapping page and javaScript. Some "Technologies" I used in this project are the font-awesome library, bootstrap framework, JSON files, javaScript, HTML, and CSS. I do think I will be challenged to complete the mapping section due to delays caused by my ER visit however I belive at this point that it is completable. I'm having a great deal of fun making this site so far. 
 
 INTENTS
-    -fix the freaking nodes highlighting before they are visually reached in questMap.js
-    -fix that when dragging over non canvas elements after starting on canvas changes stop visually occuring
+    -fix the nodes highlighting before they are visually reached in questMap.js
     -create ability for quest cards to be removed individually
     -cards should become reorderable
     -cards should have fields editable after creation
@@ -15,11 +14,18 @@ INTENTS
     -allow user to scale and translate their image before sending it into html as a card
     -resize sideNav button
     -proceeding form becoming more centered
-    -come up with schemas for organizing css files and README
+    -come up with schemas for organizing css files
     -increase readability of favicon
-    -NOTED ISSUE: highlighting text in the form then dragging mouse out of form before releasing closes form
     -header logo needs to shrink when zooming in to allow other parts to fit on screen.
+BUGS
+    -when hovering over mapping buttons moving the mouse too low can cause a "bouncing" loop
+    -highlighting text in the form then dragging mouse out of form before releasing closes form
+    -currently a node/connection at the bottom of the screen overlapping the ui button area can not be clicked (the node should not be clickable through the buttons themselves but should be in the area around them with no buttons.)
+    -uploading the json on the main page and refreshing will revert to the prior version saved to the DB
 
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
 *PROJECT 3
 **3/26/2026
     -yesterday the card creation system for quests was added.
@@ -64,6 +70,8 @@ INTENTS
     -removed local storage quest from project
     -replaced local storage with indexed database
 ##############################################################################################################
+##############################################################################################################
+##############################################################################################################
 *PROJECT 4
 **4/24/2026
     -started adding a*
@@ -88,3 +96,24 @@ INTENTS
     -began organizing js functions in questMap.js
     -can now pan over buttons without causing issues
     -a bunch of other junk in questMap.js I think
+##############################################################################################################
+**4/27/2026
+    -updated mode switching to be state based
+    -now in default mode clicking a node or connection will let you change certain values
+    -added code so that the little speech nib will face the node best as it can
+    -added several classes for speech nib
+    -added css classes for node/connection editor
+    -changed order of mode buttons
+    -canvas now resizes when window resizes
+    -three rows of hashtags in README now indicates beginning of a major section of updates
+    -pressing file button now changes its appearance for a moment
+##############################################################################################################
+**4/28/2026 - gitUpdate
+    -created a unified export.js for downloads
+    -broke uploads slightly
+    -fixed uploads
+    -made import and export .js to unify downloads and uploads across pages. (make json consistant)
+    -organized cardInserter.js
+    -added sideBar regions for MORE BUTTONS on the map page
+    -a whole lot of organizing (still incomplete)
+    -region modifiers now accesable to user

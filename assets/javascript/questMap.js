@@ -3,6 +3,11 @@
 //######################################################## Global Variables
 //########################################################
 //########################################################
+const DB_NAME = "QuestDB";
+const STORES = {
+  MAPS: "maps",
+  QUESTS: "quests"
+};
 const regionModifiers = { //currently these are being assigned here. MAKE USER MADE LATER.
   floweringmeadow: 1,
   dragonlands: 3,
@@ -35,15 +40,11 @@ let pendingConnectionNode = null;
 let mode = "none"; // "add" | "connect" | "path" | "delete" | "none"
 let dragging = false; //if we are moving the screen
 let last = { x: 0, y: 0 };//where the mouse was last frame?
-//ui states
-let pathMode = false;
-let addMode = false;
-let connectMode = false;
-let deleteMode = false;
 //size canvas to window
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
+import { downloadProject } from "./export.js";
+import { setupImporter } from "./import.js";
 
 //########################################################
 //########################################################
@@ -67,7 +68,7 @@ function getTraversalCost(fromNode, toNode, baseCost) {
 }
 
 //######################################################## CURRENTLY USELESS ... but used
-function heuristic(a, b) {
+function heuristic(a, b) { //technically dijkstra since I decided the taking into acount distance/direction was counterintuitive for this project
   return 0;
   //const dx = a.x - b.x;
   //const dy = a.y - b.y;
@@ -90,11 +91,14 @@ function reconstructPath(cameFrom, current) {
 function createNode(id, region, x, y) {
   nodes.set(id, {//in nodes find or create node with matching id
     id, //assign an id
+    name: "Node",
     region, //assign a region
     connections: [], // connections to other nodes
     x,
     y
   });
+
+  autosave();
 }
 
 //######################################################## connect two nodes and set the cost to move between them
@@ -104,6 +108,8 @@ function connect(aId, bId, cost) {
 
   a.connections.push({ id: bId, cost }); //give node A a connection to node B with cost
   b.connections.push({ id: aId, cost });//give node B a connection to node A with cost
+
+  autosave();
 }
 
 //######################################################## determine best route to goal node from start node
@@ -205,15 +211,30 @@ function worldToScreen(x, y) {//How far is this world point from the camera
 }
 
 //######################################################## update background image based on user upload
-document.querySelector("#mapUpload").addEventListener("change", (e) => { //if a file is uploaded to #mapUpload
-  const file = e.target.files[0]; // get that file
-  const url = URL.createObjectURL(file); //turn file into usable url
+document.querySelector("#mapUpload").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-  mapImage.onload = () => {
-    render(); // render after image is ready
+  const reader = new FileReader();
+
+  reader.onload = async (event) => {
+    const base64 = event.target.result;
+
+    mapImage = new Image();
+
+    mapImage.onload = () => {
+      render();
+      autosave();
+    };
+
+    mapImage.onerror = () => {
+      console.warn("Invalid base64 map image");
+    };
+
+    mapImage.src = base64;
   };
 
-  mapImage.src = url; //mapImage is the image uploaded now
+  reader.readAsDataURL(file);
 });
 
 //######################################################## tell code we are panning when holding down mouse
@@ -290,8 +311,8 @@ function render() {
   ctx.translate(-camera.x * camera.zoom, -camera.y * camera.zoom);
   ctx.scale(camera.zoom, camera.zoom);
 
-  // draw background image
-  if (mapImage.complete) {
+  // draw background image //
+  if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
     ctx.drawImage(mapImage, 0, 0);
   }
 
@@ -393,26 +414,38 @@ function animatePath() {
 //########################################################
 //########################################################
 
-//######################################################## CURRENTLY UNUSED
+//######################################################## set mode based on button click
+addNodeBtn.addEventListener("click", () => setMode("add"));
+connectBtn.addEventListener("click", () => setMode("connect"));
+pathBtn.addEventListener("click", () => setMode("path"));
+delNodeBtn.addEventListener("click", () => setMode("delete"));
+
+//######################################################## update mode to whatever mode is fed in
 function setMode(newMode) {
   mode = (mode === newMode) ? "none" : newMode;
-  updateMode()
+
+  if (mode === "path") {
+    clearPath();
+    toggleExitButton(true);
+  } 
+  else {
+    toggleExitButton(false);
+  }
+
+  updateMode();
 }
 
-//######################################################## resets all modes into the inactive state (false)
-function resetModes() { //generate a universally unique Id
-  pathMode = false;
-  addMode = false;
-  connectMode = false;
-  deleteMode = false;
+//######################################################## turns off all modes
+function resetModes() {
+  mode = "none";
 }
 
 //######################################################## set existance of class on button based on whether that mode is active
 function updateModeUI() {
-  addNodeBtn.classList.toggle("buttonActive", addMode);
-  connectBtn.classList.toggle("buttonActive", connectMode);
-  pathBtn.classList.toggle("buttonActive", pathMode);
-  delNodeBtn.classList.toggle("buttonActive", deleteMode);
+  addNodeBtn.classList.toggle("buttonActive", mode === "add");
+  connectBtn.classList.toggle("buttonActive", mode === "connect");
+  pathBtn.classList.toggle("buttonActive", mode === "path");
+  delNodeBtn.classList.toggle("buttonActive", mode === "delete");
 }
 
 //######################################################## press the escape key to exit pathMode
@@ -422,7 +455,7 @@ document.addEventListener("keydown", (e) => {
 
 //######################################################## turn off/exit pathMode
 function exitPathMode() {
-  pathMode = false;
+  resetModes()
 
   clearPath();
 
@@ -431,63 +464,6 @@ function exitPathMode() {
   render();
 }
 
-//######################################################## when clicking addNode button change addMode to on or off mode (turn other modes off too)
-document.querySelector("#addNode").addEventListener("click", () => {
-  const wasActive = addMode; //save current state t/f
-
-  resetModes();//set all modes to false
-
-  addMode = !wasActive; // flip state from t to f or vise versa
-
-  // reset state when entering
-
-  updateMode()
-});
-
-//######################################################## when clicking addConnect button change connectMode to on or off mode (turn other modes off too)
-document.querySelector("#addConnect").addEventListener("click", () => {
-  const wasActive = connectMode; //save current state t/f
-
-  resetModes();//set all modes to false
-
-  connectMode = !wasActive; // flip state from t to f or vise versa
-
-  // reset state when entering
-
-  updateMode()
-});
-
-//######################################################## when clicking deleteNode button change deleteMode to on or off mode (turn other modes off too)
-document.querySelector("#deleteNode").addEventListener("click", () => {
-  const wasActive = deleteMode; //save current state t/f
-
-  resetModes();//set all modes to false
-  node = 
-
-  deleteMode = !wasActive; // flip state from t to f or vise versa
-
-  updateMode()
-});
-
-//######################################################## when clicking runPath button change pathMode to on or off mode (turn other modes off too)
-document.querySelector("#runPath").addEventListener("click", () => {
-  const wasActive = pathMode; //save current state t/f
-
-  resetModes();//set all modes to false
-
-  pathMode = !wasActive; // flip state from t to f or vise versa
-
-  // reset state when entering
-  if (pathMode) {
-    clearPath();
-    toggleExitButton(true);
-  }
-  else {
-    toggleExitButton(false);
-  }
-
-  updateMode();
-});
 //######################################################## delete a clicked node and its connections
 function deleteNode(nodeId) {
   const node = nodes.get(nodeId);
@@ -505,117 +481,114 @@ function deleteNode(nodeId) {
 
   // remove the node itself
   nodes.delete(nodeId);
+
+  autosave();
 }
 
 //######################################################## based on active mode add, delete, connect, etc.
 canvas.addEventListener("click", (e) => {
 
-  if(deleteMode){
-    const node = getClickedNode(e);
+  switch (mode) {
+    case "delete": {
 
-    if (!node) return;
+      const node = getClickedNode(e);
+      if (node) {
+        const deletedId = node.id;
+        deleteNode(deletedId);
 
-    const deletedId = node.id;
+        if (selectedStart === node) selectedStart = null;
+        if (selectedGoal === node) selectedGoal = null;
+        if (pendingConnectionNode === node) pendingConnectionNode = null;
 
-    deleteNode(deletedId);
+        if (currentPath.includes(deletedId)) clearPath();
 
-    // clear selections if deleted
-    if (selectedStart === node) selectedStart = null;
-    if (selectedGoal === node) selectedGoal = null;
-    if (pendingConnectionNode === node) {
-      pendingConnectionNode = null;
+        render();
+        break;
+      }
+
+      const pos = getMouseWorldPos(e);
+      const edge = getEdgeAt(pos.x, pos.y);
+      if (edge) {
+        //unlike deleting a node clearing the path is taken care of in deleteEdge()
+        deleteEdge(edge);
+        render();
+        break;
+      }
+      break;
     }
 
-    // invalidate path if it used this node
-    if (currentPath.includes(deletedId)) {
-      currentPath = [];
-      animatedPath = [];
-      animSegment = 0;
-      animT = 0;
-    }
-
-    render();
-  }
-  else if(addMode){
-    const pos = getMouseWorldPos(e);
-    const x = pos.x
-    const y = pos.y
-    const id = generateId();
-
-    createNode(id, "dragonlands", x, y);
-
-    render();
-  }
-  else if (pathMode){
-
-    const node = getClickedNode(e);
-
-    if (!node) return;
-
-    //set start of path
-    if (!selectedStart) {
-      selectedStart = node;
-      selectedGoal = null;
-      currentPath = [];
-      animatedPath = [];
-    } 
-    //set end of path
-    else if (!selectedGoal) {
-      selectedGoal = node;
-
-      const result = aStar(selectedStart.id, selectedGoal.id);
-      currentPath = result || [];
-
-      animatePath(); //render the path
-    }
-    //start new path
-    else {
-      selectedStart = node;
-      selectedGoal = null;
-      currentPath = [];
-      animatedPath = [];
-    }
-
-    render();
-  }
-  else if (connectMode) {
-
-    const node = getClickedNode(e);
-
-    if (!node) return;
-
-    // FIRST CLICK
-    if (!pendingConnectionNode) {
-      pendingConnectionNode = node;
+    case "add": {
+      const pos = getMouseWorldPos(e);
+      createNode(generateId(), "dragonlands", pos.x, pos.y);
       render();
-      return;
+      break;
     }
 
-    // SECOND CLICK
-    const nodeA = pendingConnectionNode;
-    const nodeB = node;
+    case "path": {
+      const node = getClickedNode(e);
+      if (!node) return;
 
-    // prevent self-connection
-    if (nodeA === nodeB) {
+      if (!selectedStart) {
+        clearPath();
+        selectedStart = node;
+        selectedGoal = null;
+      } 
+      else if (!selectedGoal) {
+        selectedGoal = node;
+        currentPath = aStar(selectedStart.id, selectedGoal.id) || [];
+        animatePath();
+      } 
+      else {
+        clearPath();
+        selectedStart = node;
+        selectedGoal = null;
+      }
+
+      render();
+      break;
+    }
+
+    case "connect": {
+      const node = getClickedNode(e);
+      if (!node) return;
+
+      if (!pendingConnectionNode) {
+        pendingConnectionNode = node;
+        render();
+        return;
+      }
+
+      const nodeA = pendingConnectionNode;
+      const nodeB = node;
+
+      if (nodeA !== nodeB) {
+        const exists = nodeA.connections.some(c => c.id === nodeB.id);
+        if (!exists) connect(nodeA.id, nodeB.id, 5);
+      }
+
       pendingConnectionNode = null;
       render();
-      return;
+      break;
     }
 
-    // prevent duplicate connection
-    const alreadyConnected = nodeA.connections.some(c => c.id === nodeB.id);
+    default: {
+      const pos = getMouseWorldPos(e);
 
-    if (!alreadyConnected) {
-      connect(nodeA.id, nodeB.id, 5); // default cost
+      const node = getNodeAt(pos.x, pos.y);
+      if (node) {
+        openNodeEditor(node);
+        return;
+      }
+
+      const edge = getEdgeAt(pos.x, pos.y);
+      if (edge) {
+        openEdgeEditor(edge);
+        return;
+      }
+
+      closeEditor();
+      break;
     }
-
-    // reset for next connection
-    pendingConnectionNode = null;
-
-    render();
-  }
-  else{
-    return
   }
 });
 
@@ -631,7 +604,7 @@ function toggleExitButton(show) {
 
 //######################################################## update cursor style depending on mode
 function updateCursor() {
-  canvas.style.cursor = pathMode || addMode || connectMode || deleteMode ? "crosshair" : "default";
+  canvas.style.cursor = mode === "none" ? "default" : "crosshair";
 }
 //########################################################
 //########################################################
@@ -702,6 +675,453 @@ function updateMode(){
   updateModeUI();
   render();
 }
+//######################################################## returns a connection at a given x/y coordinate
+function getEdgeAt(x, y) {
+  const threshold = 6; // how close you have to be
+
+  for (let node of nodes.values()) {
+    for (let c of node.connections) {
+      const target = nodes.get(c.id);
+
+      // avoid duplicate checking
+      if (node.id > target.id) continue;
+
+      const dist = pointToSegmentDistance(x, y, node.x, node.y, target.x, target.y);
+
+      if (dist <= threshold) {
+        return {
+          a: node,
+          b: target,
+          cost: c.cost
+        };
+      }
+    }
+  }
+
+  return null;
+}
+//######################################################## determines where to display node/connection editor and associated nib
+function positionEditor(worldX, worldY) {
+  const el = document.querySelector("#editor");
+
+  const screen = worldToScreen(worldX, worldY);
+  const padding = 10;
+
+  const navBar = document.querySelector(".headerBar");
+  const navHeight = navBar ? navBar.offsetHeight : 0;
+
+  el.style.display = "block";
+  el.style.visibility = "hidden";
+
+  const rect = el.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+
+  el.classList.remove("nib-top", "nib-bottom", "nib-left", "nib-right");
+
+  let x, y;
+  let nib = "nib-bottom"; // default above node
+
+  x = screen.x - w / 2;
+  y = screen.y - h - 20;
+
+  let fitsAbove =
+    y >= navHeight + padding &&
+    x >= padding &&
+    x + w <= window.innerWidth - padding;
+
+  if (fitsAbove) {
+    nib = "nib-bottom";
+  }
+
+  else {
+    x = screen.x - w / 2;
+    y = screen.y + 20;
+
+    let fitsBelow =
+      y + h <= window.innerHeight - padding &&
+      x >= padding &&
+      x + w <= window.innerWidth - padding;
+
+    if (fitsBelow) {
+      nib = "nib-top";
+    }
+
+    else {
+      // decide side based on available space
+      const spaceLeft = screen.x;
+      const spaceRight = window.innerWidth - screen.x;
+
+      if (spaceRight >= spaceLeft) {
+        x = screen.x + 20;
+        y = screen.y - h / 2;
+        nib = "nib-left";
+      } else {
+        x = screen.x - w - 20;
+        y = screen.y - h / 2;
+        nib = "nib-right";
+      }
+
+      // clamp vertically
+      y = Math.max(
+        navHeight + padding,
+        Math.min(window.innerHeight - h - padding, y)
+      );
+    }
+  }
+
+  //clamp
+  x = Math.max(padding, Math.min(window.innerWidth - w - padding, x));
+  y = Math.max(navHeight + padding, Math.min(window.innerHeight - h - padding, y));
+
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  el.classList.add(nib);
+  el.style.visibility = "visible";
+}
+//######################################################## opens node editor for user
+function openNodeEditor(node) {
+  const el = document.querySelector("#editor");
+  el.innerHTML = "";
+
+  const container = document.createElement("div");
+  container.classList.add("editorElements");
+
+  const nameLabel = document.createElement("label");
+  nameLabel.textContent = "Name:";
+
+  const nameInput = document.createElement("input");
+  nameInput.value = node.name ?? "";
+
+  const regionLabel = document.createElement("label");
+  regionLabel.textContent = "Region:";
+
+  const regionInput = document.createElement("input");
+  regionInput.value = node.region ?? "";
+
+  const saveIcon = document.createElement("i");
+  saveIcon.classList.add("fa-solid", "fa-floppy-disk");
+
+  const saveBtn = document.createElement("button");
+  saveBtn.appendChild(saveIcon);
+
+  saveBtn.onclick = () => {
+    node.name = nameInput.value;
+    node.region = regionInput.value;
+    render();
+    autosave();
+  };
+
+  container.append(nameLabel, nameInput, regionLabel, regionInput, saveBtn);
+  el.appendChild(container);
+
+  el.style.display = "block";
+  positionEditor(node.x, node.y);
+}
+//######################################################## opens edge editor for user
+function openEdgeEditor(edge) {
+  const el = document.querySelector("#editor");
+  el.innerHTML = "";
+
+  const container = document.createElement("div");
+  container.classList.add("editorElements");
+
+  const label = document.createElement("label");
+  label.textContent = "Cost:";
+
+  const input = document.createElement("input");
+  input.type = "number";
+  input.value = edge.cost ?? 1;
+  input.id = "edgeCost";
+
+  const saveIcon = document.createElement("i");
+  saveIcon.classList.add("fa-solid", "fa-floppy-disk");
+
+  const saveBtn = document.createElement("button");
+  saveBtn.appendChild(saveIcon);
+
+  saveBtn.onclick = () => {
+    const newCost = Number(input.value);
+
+    if (Number.isNaN(newCost)) return;
+
+    const ab = edge.a.connections.find(c => c.id === edge.b.id);
+    const ba = edge.b.connections.find(c => c.id === edge.a.id);
+
+    if (ab) ab.cost = newCost;
+    if (ba) ba.cost = newCost;
+
+    render();
+    autosave();
+  };
+
+  container.append(label, input, saveBtn);
+  el.appendChild(container);
+
+  el.style.display = "block";
+
+  const midX = (edge.a.x + edge.b.x) / 2;
+  const midY = (edge.a.y + edge.b.y) / 2;
+
+  positionEditor(midX, midY);
+}
+//######################################################## hide the node/edge editor and remove any internal content
+function closeEditor() {
+  const el = document.querySelector("#editor");
+  el.style.display = "none";
+  el.innerHTML = "";
+  autosave();
+}
+//######################################################## determines if a clicked location is part of an edge (and which edge/connection)
+function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+
+  // degenerate segment (point)
+  if (dx === 0 && dy === 0) {
+    return Math.hypot(px - x1, py - y1);
+  }
+
+  const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+
+  const clampedT = Math.max(0, Math.min(1, t));
+
+  const closestX = x1 + clampedT * dx;
+  const closestY = y1 + clampedT * dy;
+
+  return Math.hypot(px - closestX, py - closestY);
+}
+
+//######################################################## resize the map area when the window is resized so things don't become morphed weirdly
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+
+  // match internal resolution to displayed size
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+
+  render();
+}
+
+//######################################################## when resizing the window resize the canvas
+window.addEventListener("resize", resizeCanvas);
+
+//######################################################## deletes a connection between two points
+function deleteEdge(edge) {
+  const a = edge.a;
+  const b = edge.b;
+
+  // remove connection from A - B
+  a.connections = a.connections.filter(c => c.id !== b.id);
+
+  // remove connection from B - A
+  b.connections = b.connections.filter(c => c.id !== a.id);
+
+  // check if this edge exists in current path
+  if (currentPath && currentPath.length > 1) {
+    for (let i = 0; i < currentPath.length - 1; i++) {
+      const idA = currentPath[i];
+      const idB = currentPath[i + 1];
+
+      // if path contains this exact edge (in either direction)
+      if (
+        (idA === a.id && idB === b.id) ||
+        (idA === b.id && idB === a.id)
+      ) {
+        clearPath();
+        break;
+      }
+    }
+  }
+
+  autosave();
+}
+
+//######################################################## convert data into a json friendly format
+function serializeMap() {
+  return {
+    nodes: Array.from(nodes.values()),
+    mapImage: mapImage?.src && mapImage.src.startsWith("data:image")
+      ? mapImage.src
+      : null
+  };
+}
+
+//######################################################## open or create the database
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 2);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(STORES.MAPS)) {
+        db.createObjectStore(STORES.MAPS, { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.QUESTS)) {
+        db.createObjectStore(STORES.QUESTS, { keyPath: "id" });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+//######################################################## save to the database
+async function saveMapToDB() {
+  const db = await openDB();
+  const tx = db.transaction(STORES.MAPS, "readwrite");
+  const store = tx.objectStore(STORES.MAPS);
+
+  const data = serializeMap();
+
+  store.put({
+    id: "current",
+    data
+  });
+
+  return tx.complete;
+}
+
+//######################################################## load from the database
+async function loadMapFromDB() {
+  const db = await openDB();
+  const tx = db.transaction(STORES.MAPS, "readonly");
+  const store = tx.objectStore(STORES.MAPS);
+
+  return new Promise((resolve) => {
+    const req = store.get("current");
+
+    req.onsuccess = () => resolve(req.result?.data || null);
+    req.onerror = () => resolve(null);
+  });
+}
+
+//######################################################## undo serialization and set nodes/connections
+function hydrateMap(data) {
+  if (!data) return;
+
+  // unwrap project format if needed
+  if (data.map && data.map.nodes) {
+    data = data.map;
+  }
+
+  if (!Array.isArray(data.nodes)) {
+    console.error("Invalid map format:", data);
+    return;
+  }
+
+  nodes.clear();
+
+  for (const n of data.nodes) {
+    nodes.set(n.id, {
+      id: n.id,
+      name: n.name ?? "Node",
+      region: n.region ?? "dragonlands",
+      x: Number(n.x),
+      y: Number(n.y),
+      connections: Array.isArray(n.connections) ? n.connections : []
+    });
+  }
+
+  clearPath();
+
+  if (data.mapImage && data.mapImage.startsWith("data:image")) {
+    mapImage = new Image();
+    mapImage.onload = () => render();
+    mapImage.src = data.mapImage;
+  } else {
+    mapImage = new Image();
+  }
+
+  render();
+}
+
+//######################################################## UNUSED/OUTDATED/DEPRICATED
+function exportFullProject() {
+  return {
+    cards: cards,
+    map: serializeMap()
+  };
+}
+
+//######################################################## download the map OUTDATED/DEPRICATED
+function downloadMap() {
+  const data = serializeMap();
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quest-map.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+//######################################################## download the project to a json file
+document.querySelector("#download").addEventListener("click", () => {
+  downloadProject();
+});
+
+
+//######################################################## save the current map to the database
+async function autosave() {
+  await saveMapToDB();
+}
+
+//######################################################## toggles region menu visibility on click
+document.querySelector("#regions").addEventListener("click", () => {
+  const panel = document.querySelector("#regionsDisplay");
+  panel.classList.toggle("hidden");
+
+  if (!panel.classList.contains("hidden")) {
+    openRegionMenu();
+  }
+});
+
+//######################################################## fills the region menu with context
+function openRegionMenu() {
+  const panel = document.querySelector("#regionsDisplay");
+
+  panel.classList.remove("hidden");
+  panel.innerHTML = "";
+
+  const title = document.createElement("h3");
+  title.textContent = "Region Modifiers";
+
+  panel.appendChild(title);
+
+  Object.entries(regionModifiers).forEach(([region, value]) => {
+    const row = document.createElement("div");
+    row.classList.add("regionRow");
+
+    const label = document.createElement("span");
+    label.textContent = region;
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.value = value;
+    input.min = 0.1;
+    input.step = 0.1;
+
+    input.addEventListener("change", () => {
+      regionModifiers[region] = Number(input.value);
+      autosave();
+    });
+
+    row.append(label, input);
+    panel.appendChild(row);
+  });
+}
+
 //########################################################
 //########################################################
 //######################################################## Run on start
@@ -709,4 +1129,30 @@ function updateMode(){
 //########################################################
 
 //######################################################## render on starting page
-render();// render on loading the page
+(async function init() {
+  const data = await loadMapFromDB();
+  hydrateMap(data);
+})();
+
+resizeCanvas();// render on page load
+
+setupImporter({
+  inputSelector: "#upload",
+
+  setCards: async (newCards) => {
+    const db = await openDB();
+    const tx = db.transaction(STORES.QUESTS, "readwrite");
+    const store = tx.objectStore(STORES.QUESTS);
+
+    await store.clear(); // clear quests
+
+    for (const card of newCards) {
+      store.put(card);
+    }
+  },
+
+  hydrateMap: (mapData) => {
+    hydrateMap(mapData);
+    saveMapToDB();
+  }
+});

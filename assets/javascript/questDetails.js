@@ -1,16 +1,25 @@
 //NEW database stuff
 const DB_NAME = "QuestDB";//variable for database name
-const STORE_NAME = "quests";//object storage
+const STORES = {
+  QUESTS: "quests",
+  MAPS: "maps"
+};
+//create bootstrap carousel
+const carouselEl = document.querySelector("#carouselContainerContainer");
 
 function openDB() {//create or open database
   return new Promise((resolve, reject) => {//return results of promise? (I still don't fully get async & promises)
-    const request = indexedDB.open(DB_NAME, 1); //open database with matching name and version or create it
+    const request = indexedDB.open(DB_NAME, 2); //open database with matching name and version or create it
 
     request.onupgradeneeded = (event) => {//if the database has just been created or the version # has increased
       const db = event.target.result;//the database is assigned to variable db
 
-      if (!db.objectStoreNames.contains(STORE_NAME)) { //does the object storage table exist
-        db.createObjectStore(STORE_NAME, { keyPath: "id" });//if not create it
+      if (!db.objectStoreNames.contains("quests")) {
+        db.createObjectStore("quests", { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains("maps")) {
+        db.createObjectStore("maps", { keyPath: "id" });
       }
     };
 
@@ -24,8 +33,8 @@ const questId = params.get("id");//questId is id from params/the url
 
 async function getQuestById(id) {//return id of quest
   const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readonly");
-  const store = tx.objectStore(STORE_NAME);
+  const tx = db.transaction(STORES.QUESTS, "readonly");
+  const store = tx.objectStore(STORES.QUESTS);
 
   return new Promise((resolve, reject) => {
     const request = store.get(id);
@@ -93,9 +102,6 @@ function renderQuest(q) {//render the quest
     indicators.appendChild(button);
   });
 }
-
-//create bootstrap carousel
-const carouselEl = document.querySelector("#carouselContainerContainer");
 
 new bootstrap.Carousel(carouselEl, {
   interval: false,
