@@ -1,5 +1,6 @@
 <head> 
     <link rel="stylesheet" href="assets/css/index.css"> 
+    <link rel="stylesheet" href="assets/css/defaultNav.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> <!-- A library I use in coding for foundry vtt with nice in text icons -->
     <meta charset="UTF-8"> <title>Adventure Atlas</title> 
     <meta name="description" content="A web application for table top game masters and players for hosting quest boards alongside having the niche feature to route between player location and quest location.">
@@ -19,7 +20,10 @@
                 <input class="hidden" type="file" id="uploadQuests" accept="application/json">
             </label>
             <button id="downloadQuests" class="createQuestBtn"><i class="fa-solid fa-download"></i></button>
-            <button id="openQuestForm" class="createQuestBtn">Create Quest +</button>
+            <button id="openQuestForm" class="createQuestBtn">
+                <span class="btnText">Create Quest</span> 
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </div>
     </div>
 
@@ -71,6 +75,6 @@
 
     </div>
 
-    <a href="questMap.html">TEMPORARY LINK</a>
+    <a href="questMap.html">TEMPORARY LINK TO MAP PAGE</a>
     <script type="module" src="assets/javascript/cardInserter.js"></script> <!-- Javascript that inserts quest cards into cardHolder -->
 </body>

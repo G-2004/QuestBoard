@@ -4,6 +4,7 @@ Project 3 REFLECTION
 I think that so far the project is going well. I am disatisfied with the current logo and seeking a better name for the project however other than that I believe things are going well. The remainder of this project I believe will focus on more control over cards for the user, cleaner css for the description page, and adding the actual mapping page and javaScript. Some "Technologies" I used in this project are the font-awesome library, bootstrap framework, JSON files, javaScript, HTML, and CSS. I do think I will be challenged to complete the mapping section due to delays caused by my ER visit however I belive at this point that it is completable. I'm having a great deal of fun making this site so far. 
 
 INTENTS
+    -make map page mobile friendly (the buttons currently go beyond screen boundries when the screen width is to small)(zooming in too much makes buttons overlap | not the slightest clue how to make zooming the normal way work well. May have to find a way to disable)
     -fix the nodes highlighting before they are visually reached in questMap.js
     -create ability for quest cards to be removed individually
     -cards should become reorderable
@@ -12,16 +13,25 @@ INTENTS
     -find a nice font
     -locate all instances of carouselContainerContainer Id and references to it and replace with a better name
     -allow user to scale and translate their image before sending it into html as a card
-    -resize sideNav button
-    -proceeding form becoming more centered
-    -come up with schemas for organizing css files
+    -resize sideNav button (not sure about this one)
+    -proceeding form becoming more centered (complete?)
     -increase readability of favicon
     -header logo needs to shrink when zooming in to allow other parts to fit on screen.
+    -make resizing screen and zooming work on all pages without issue
+    -allow user to pick a color for mapNodes
 BUGS
+    -opening a json without set regions does not reset regions to a default
     -when hovering over mapping buttons moving the mouse too low can cause a "bouncing" loop
     -highlighting text in the form then dragging mouse out of form before releasing closes form
     -currently a node/connection at the bottom of the screen overlapping the ui button area can not be clicked (the node should not be clickable through the buttons themselves but should be in the area around them with no buttons.)
-    -uploading the json on the main page and refreshing will revert to the prior version saved to the DB
+    -uploading the json on the main page and refreshing will revert to the prior version saved to the DB (fixed I think | need to check)
+README RULES
+    - ~ADJUSTED:filename [function/"entry"] will list all functions that received any adjustment
+    - +NEW:filename [function/"entry"] will list all newly added functions
+    - three rows of hashtags in README now indicates beginning of a major section of updates
+    - entry in readme with '- gitUpdate' indicates I pushed something to gitHub on that day
+    - each days entry is seperated by a single row of hashtags
+    - asterisks are used so ctrl+f may be used to navigate to each date or major section do not use * in other context unless absolutely necessary
 
 ##############################################################################################################
 ##############################################################################################################
@@ -117,3 +127,23 @@ BUGS
     -added sideBar regions for MORE BUTTONS on the map page
     -a whole lot of organizing (still incomplete)
     -region modifiers now accesable to user
+##############################################################################################################
+**4/28/2026
+    -updated node appearance
+    -user can now delete regions
+    -user can now create regions
+    -user can now save changes to region
+    -new README rule ~ADJUSTED:filename [function/"entry"] will list all functions that received any adjustment (today will be imperfect)
+    -new README rule +NEW:filename [function] will list all newly added functions (today will be imperfect)
+    ~ADJUSTED:questMap.js [drawNode, openNodeEditor, hydrateMap]
+    +NEW:questMap.js [createRegion, ]
+    -created rules section in README
+    -created a planning folder to hold project plans
+    -started commenting inside functions in questMap.js in a more readable way using //========== "purpose" ==========// format
+    -started styling questDetails with questDetails.css
+    -questDetails is the first mobile friendly page. (if the height is more than the width the layout changes)
+    -increased mobile friendlyness of index page
+    -replaced ctx fill and stroke colors with rgb values instead of color names
+##############################################################################################################
+**4/29/2026 - gitUpdate
+    -no actual progress was made this day

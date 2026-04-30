@@ -1,31 +1,3 @@
-/*header*/
-    .headerBar {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        padding: 5px;
-        background-color: rgb(63, 56, 47);
-        color: rgb(235, 231, 217);
-        padding-left: 2%;
-        padding-right: 2%;
-    }
-
-    .sideNav {
-        font-size: 32pt;
-    }
-    .left {
-        justify-self: start;
-    }
-
-    .right {
-        justify-self: end;
-    }
-
-    .siteLogo {
-        justify-self: center;
-        filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5));
-    }
-
 /* Quest cards */
     .cardHolder {
         display: flex;
@@ -184,6 +156,24 @@
         border-radius: 14px;
         box-shadow: 0 3px 6px rgba(0,0,0,0.4);
         transition: transform 0.1s ease-in-out; 
+
+        min-width: 80px;
+        min-height: 80px;
+
+        max-height: 80%;
+
+        box-sizing: border-box;
+    }
+
+    .createQuestBtn,
+    .createQuestBtn label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .createQuestBtn input {
+        display: none;
     }
 
     .createQuestBtn:hover {
@@ -265,6 +255,29 @@
     }
     .creationButtonsContainer{
         display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+
         align-items: center;
         gap: 10px;
+        max-width: 100%;
     }
+    .btnText {
+        display: inline;
+    }
+
+@media (max-width: 900px) {
+    .creationButtonsContainer {
+        position: fixed;
+        top: 110px;
+        right: 10px;
+        flex-direction: column;
+        background: rgba(63, 56, 47, 0.671);
+        padding: 10px;
+        border-radius: 10px;
+        z-index: 1000;
+    }
+    .btnText {
+        display: none;
+    }
+}

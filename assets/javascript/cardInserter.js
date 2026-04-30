@@ -201,65 +201,6 @@ async function addQuest(title, reward, difficulty, thumbnail, pixelated, descrip
 //######################################################## download the project to a json file
 downloadBtn.addEventListener("click", () => { downloadProject(); });
 
-//######################################################## upload a json file to act as current project DEPRICATED
-/*
-uploadInput.addEventListener("change", () => {
-  const file = uploadInput.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-
-      // --------------------------
-      // validate base structure
-      // --------------------------
-      if (!imported || typeof imported !== "object") {
-        throw new Error("Invalid format");
-      }
-
-      // --------------------------
-      // CARDS
-      // --------------------------
-      if (Array.isArray(imported.cards)) {
-        cards = imported.cards.map(q => ({
-          id: q.id || "quest_" + Date.now() + Math.random(),
-          title: String(q.title || "Untitled Quest"),
-          reward: Number(q.reward) || 0,
-          difficulty: Number(q.difficulty) || 1,
-          thumbnail: q.thumbnail || "assets/images/defaultThumb.png",
-          pixelated: Boolean(q.pixelated),
-          description: String(q.description || ""),
-          host: String(q.host || ""),
-          images: Array.isArray(q.images) ? q.images : []
-        }));
-      } else {
-        // optional fallback if older format is used
-        console.warn("No cards found in import file");
-        cards = [];
-      }
-
-      //
-      if (imported.map && typeof hydrateMap === "function") {
-        hydrateMap(imported.map);
-      }
-      renderCards();
-
-      //save the quests
-      cards.forEach(saveQuestToDB);
-
-    } catch (err) {
-      console.error("Import failed:", err);
-      alert("Invalid project file.");
-    }
-  };
-
-  reader.readAsText(file);
-});
-*/
-
 //########################################################
 //########################################################
 //######################################################## Other

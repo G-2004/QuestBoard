@@ -3,16 +3,13 @@
 //######################################################## Global Variables
 //########################################################
 //########################################################
+const DEFAULT_REGION_ID = "default";
 const DB_NAME = "QuestDB";
 const STORES = {
   MAPS: "maps",
   QUESTS: "quests"
 };
-const regionModifiers = { //currently these are being assigned here. MAKE USER MADE LATER.
-  floweringmeadow: 1,
-  dragonlands: 3,
-  sandyhollow: 2
-};
+const regions = new Map(); // id -> region object
 const camera = {
   x: 0,
   y: 0,
@@ -63,7 +60,10 @@ function getNeighbors(node) {
 
 //######################################################## get the cost to move to a given node from a given node
 function getTraversalCost(fromNode, toNode, baseCost) {
-  const regionFactor = regionModifiers[toNode.region] || 1; //get cost of region of node you are moving to or 1
+  //get cost of region of node you are moving to or 1
+  const region = regions.get(toNode.regionId) || regions.get(DEFAULT_REGION_ID);
+  const regionFactor = region?.modifier ?? 1;
+
   return baseCost * regionFactor; //multiply base cost by region difficulty/problems (maybe change to add?)
 }
 
@@ -88,71 +88,93 @@ function reconstructPath(cameFrom, current) {
 }
 
 //######################################################## create a node at a given location
-function createNode(id, region, x, y) {
+function createNode(id, regionId, x, y) {
+
+  //========== add a node or overwrite a node with the given id ==========//
   nodes.set(id, {//in nodes find or create node with matching id
     id, //assign an id
     name: "Node",
-    region, //assign a region
+    regionId, //assign a region
     connections: [], // connections to other nodes
     x,
     y
   });
 
+
+  //========== save the project ==========//
   autosave();
 }
 
 //######################################################## connect two nodes and set the cost to move between them
 function connect(aId, bId, cost) {
+  //========== get the id of both nodes ==========//
   const a = nodes.get(aId); //point 1
   const b = nodes.get(bId); // point 2
 
+  //========== add a connection to the other node to both ==========//
   a.connections.push({ id: bId, cost }); //give node A a connection to node B with cost
   b.connections.push({ id: aId, cost });//give node B a connection to node A with cost
 
+  //========== save the project ==========//
   autosave();
 }
 
 //######################################################## determine best route to goal node from start node
 function aStar(startId, goalId) {
+  //========== variables to hold the start and end node ids ==========//
   const start = nodes.get(startId); //id of start node
   const goal = nodes.get(goalId); // id of end node
 
-  const openSet = [start];//nodes to check //start is checked by default
+  //========== variables to hold the most optimal path ==========//
+  const openSet = [start];//nodes that have been explored but not fully explored
   const cameFrom = new Map(); //stores best path
 
-  const gScore = new Map();//cost to get to current node
+  //========== variables to hold data on best path to a given node and approximate distance to goal ==========//
+  const gScore = new Map();//cost to get to current node along best known path to node from start
   const fScore = new Map();//estimated cost to goal from node
 
+  //========== by default most nodes have no data on the best way to reach them ==========//
   nodes.forEach(n => {//for every node
     gScore.set(n.id, Infinity);//all nodes default assumed impossibly expensive
+    //fscore no longer really used (leave present in case we decide to change heuristic)
     fScore.set(n.id, Infinity);//all nodes default assumed impossibly expensive
   });
 
+  //========== set gscore at start to 0 to say there will be no better path to the start because this is the start ==========//
   gScore.set(start.id, 0); //cost to get to starting node is 0
   fScore.set(start.id, heuristic(start, goal)); //estimate distance to get from start to goal //always underestimates or gets it exact
 
+  //========== find the optimal path from start to goal ==========//
   while (openSet.length > 0) { //for as long as there are nodes in openSet to be checked
     // get node with lowest fScore
+    //========== look at nodes to be checked and find the one most likely to bring us toward the goal ==========// NOT CURRENTLY USEFUL
     openSet.sort((a, b) => fScore.get(a.id) - fScore.get(b.id));//sort nodes in openSet by comparing fScores so the lowest cost is first
     const current = openSet.shift();//remove best option from openSet (nodes to be checked) and assign that value to current
 
-    if (current.id === goal.id) {//if current id is the goal reconstruct the path we took to get here.
+    //========== if the most likely node to work is the goal recontruct the path ==========//
+    if (current.id === goal.id) {
       return reconstructPath(cameFrom, current);
     }
 
+    //========== check all neighbors of current node and ... ==========//
     for (let neighborData of getNeighbors(current)) { //neighborData is all connections to current node //for each item in neighborData
       const neighbor = neighborData.node; //set just the node part as neighbor
 
-      const cost = getTraversalCost(//get cost to move to neighbor
+      //========== how much would it cost us to move to this neighbor ==========//
+      const cost = getTraversalCost(
         current,
         neighbor,
         neighborData.cost
       );
 
-      const tentativeG = gScore.get(current.id) + cost; //tentativeG is the cost it took to get here plus the cost it takes to get to the connection
+      //========== cost to get to current location and move to neighbor ==========//
+      const tentativeG = gScore.get(current.id) + cost;
       
+      //========== if this is a more efficient route to this neighbor update neighbors gScore ==========//
       //the cost to go backwards will always be = or higher to the cost to get to the current node because tentativeG includes the cost it took to get to the current location
       if (tentativeG < gScore.get(neighbor.id)) {//if the cost to reach the connection is lower than the best known cost to get to that neighbor
+
+        //========== tell neighbor what node led to this new gScore ==========//
         cameFrom.set(neighbor.id, current);//current is node this neighbor node came from so it'll chain back to start
 
         gScore.set(neighbor.id, tentativeG);//best cost to reach neighbor is now tentativeG
@@ -161,6 +183,7 @@ function aStar(startId, goalId) {
           tentativeG + heuristic(neighbor, goal) //set fscore to cost to get here and assumed cost to reach goal
         );
 
+        //========== this neighbor should be explored now too ==========//
         if (!openSet.includes(neighbor)) {//add this to nodes to explore if not already present
           openSet.push(neighbor);
         }
@@ -168,8 +191,10 @@ function aStar(startId, goalId) {
     }
   }
 
+  //========== if ya couldn't find a path at all say so ==========//
   return null; // no path to goal from start
 }
+
 //########################################################
 //########################################################
 //######################################################## Camera
@@ -178,28 +203,40 @@ function aStar(startId, goalId) {
 
 //######################################################## adjusts camera zoom level
 canvas.addEventListener("wheel", (e) => {//when scrolling over canvas item
-  e.preventDefault();//do not scroll the page as normal
+  //========== remove users normal page scroll ability ==========//
+  e.preventDefault();
 
+  //========== how much each wheel click changes zoom by and which direction ==========//
   const zoomFactor = 1.1;//how much to change the zoom by. 10%
   const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor; // deltaY is scroll direction // if deltaY greater than 0 zoom in else zoom out
 
-  // mouse position in screen space
+  //========== where the mouse is on the screen ==========//
   const mouseX = e.clientX;
   const mouseY = e.clientY;
 
-  // convert mouse position to world coordinates BEFORE zoom
+  //========== where the mouse is in the world so we can say where to zoom in on ==========//
   const worldX = camera.x + mouseX / camera.zoom;
   const worldY = camera.y + mouseY / camera.zoom;
+  /*
+    //ex: current camera position + mouse position on screen / camera zoom level = where the mouse is in the world
+    //Zoom is how many pixels on your screen makes up a single world pixel. so a zoom of 2 says two pixels on your screen is one pixel on the canvas
+    //(2 would be 2px y and 2 px x so it is a 2 by 2 area making up one canvas pixel/unit)
+    //zoom must be undone to say one pixel on the screen is one pixel in the world
+  */
 
+  //========== take current zoom level and adjust it with a new zoom level ==========//
   const newZoom = camera.zoom * direction; //take current zoom and multiply by 1.1 or 0.91 (direction)
+  //(direction is which way to zoom and how strong combined)
 
-  // adjust camera so zoom focuses on mouse position
+  //========== adjust camera so zoom focuses on mouse position ==========//
   camera.x = worldX - mouseX / newZoom;
   camera.y = worldY - mouseY / newZoom;
 
+  //========== set the new zoom level ==========//
   camera.zoom = newZoom; //update zoom level
 
-  render();//render everything
+  //========== render everything ==========//
+  render();
 });
 
 //######################################################## returns x and y location on map as an x and y on the screen (hard to describe)
@@ -208,40 +245,54 @@ function worldToScreen(x, y) {//How far is this world point from the camera
     x: (x - camera.x) * camera.zoom, 
     y: (y - camera.y) * camera.zoom
   };
+  /*
+    //Zoom is how many pixels on your screen makes up a single world pixel. so a zoom of 2 says two pixels on your screen is one pixel on the canvas
+    //(2 would be 2px y and 2 px x so it is a 2 by 2 area making up one canvas pixel/unit)
+    //zoom must be undone to say one pixel on the screen is one pixel in the world
+  */
 }
 
 //######################################################## update background image based on user upload
 document.querySelector("#mapUpload").addEventListener("change", (e) => {
+  //========== when we think a file is uploaded assign that file to a variable and ==========//
   const file = e.target.files[0];
+  //========== if nothing was actually uploaded stop ==========//
   if (!file) return;
-
+  //========== a reader used to interpret the file ==========//
   const reader = new FileReader();
 
+  //========== once the reader has converted the file ==========//
   reader.onload = async (event) => {
+    //========== this is the image ==========//
     const base64 = event.target.result;
 
     mapImage = new Image();
 
+    //========== once the reader has converted the file render it and save the project ==========//
     mapImage.onload = () => {
       render();
       autosave();
     };
 
+    //========== if the image is corrupted or not an image send a warning ==========//
     mapImage.onerror = () => {
       console.warn("Invalid base64 map image");
     };
 
+    //========== set the backround image to the uploaded image ==========//
     mapImage.src = base64;
   };
 
+  //========== turn the binary data of the file into base64 image data/url ==========//
   reader.readAsDataURL(file);
 });
 
 //######################################################## tell code we are panning when holding down mouse
 mapContainer.addEventListener("mousedown", (e) => {
-  dragging = true; //we are actively moving
+  //========== tell the program we are panning ==========//
+  dragging = true;
   
-  //horizontal and vertical position of mouse
+  //========== where the mouse is ==========//
   last.x = e.clientX;
   last.y = e.clientY;
 });
@@ -251,21 +302,23 @@ mapContainer.addEventListener("mouseup", () => dragging = false);
 
 //######################################################## pan the camera when the mouse is being held down and moved
 mapContainer.addEventListener("mousemove", (e) => { //when the mouse moves
-  if (!dragging) return; //if we are dragging continue else return
+  //========== ignore movement if the mouse is not also being held down ==========//
+  if (!dragging) return;
 
-  //delta of x/y //how far has the mouse moved since last frame //divide by zoom cause it changes the mapUnits to move by. (basically make zoom matter when panning)
+  //========== how far did the mouse move from its last position? ==========//
   const dx = (e.clientX - last.x) / camera.zoom;
   const dy = (e.clientY - last.y) / camera.zoom;
 
-  //take the current camera x/y and move up/down left/right based on change/delta
+  //========== move the camera the distance the mouse moved and in the opposite direction ==========//
   camera.x -= dx;
   camera.y -= dy;
+  //take the current camera x/y and move up/down left/right based on change/delta
 
-  //last position is now current mouse position
+  //========== set last position of mouse to current mouse position ==========//
   last.x = e.clientX;
   last.y = e.clientY;
 
-  //render everything
+  //========== render the changes ==========//
   render();
 });
 //########################################################
@@ -275,7 +328,7 @@ mapContainer.addEventListener("mousemove", (e) => { //when the mouse moves
 //########################################################
 
 //######################################################## Draws the connection between two points
-function drawEdge(a, b) { //connects two given nodes
+function drawEdge(a, b) { //connects two given nodes visually
   ctx.beginPath();// start path
   ctx.moveTo(a.x, a.y); //set coords
   ctx.lineTo(b.x, b.y); //from coords make line to b coords
@@ -287,10 +340,15 @@ function drawNode(node) { //draws the location of given node
   ctx.beginPath();
   ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.strokeStyle = "black"; //color is black
+  ctx.lineWidth = 2; //when following the path draw with a width of two
+  ctx.stroke(); //follow the arc and draw
 }
 
 //######################################################## Draws a line segment t being the completion percentage (1 = done | 0 = none)
 function drawAnimatedEdge(a, b, t) {
+  //a = node to start at | b = node to end at | t = percentage along path
   ctx.beginPath();
   ctx.moveTo(a.x, a.y);
 
@@ -322,7 +380,7 @@ function render() {
       const target = nodes.get(c.id);//current node to connect to 
 
       if (node.id < target.id) { //sort by uuid to prevent drawing a connection twice
-        ctx.strokeStyle = "white";
+        ctx.strokeStyle = "rgb(255, 255, 255)";
         drawEdge(node, target);
       }
     });
@@ -334,7 +392,7 @@ function render() {
       const a = nodes.get(currentPath[i]); //current node
       const b = nodes.get(currentPath[i + 1]); //next node
 
-      ctx.strokeStyle = "red"; //draw in red
+      ctx.strokeStyle = "rgb(158, 23, 23)"; //draw in red
       drawEdge(a, b);//draw the edge with no animation //appears like nothing changed to user
     }
 
@@ -343,7 +401,7 @@ function render() {
       const a = nodes.get(currentPath[animSegment]); //current node
       const b = nodes.get(currentPath[animSegment + 1]);//next node
 
-      ctx.strokeStyle = "red";// draw in red
+      ctx.strokeStyle = "rgb(158, 23, 23)";// draw in red
       drawAnimatedEdge(a, b, animT); //run drawAnimatedEdge
       
     }
@@ -358,12 +416,12 @@ function render() {
     const isCurrent = node.id === currentPath[animSegment];
 
     const isNext = node.id === currentPath[animSegment + 1];
-    if (node === pendingConnectionNode) ctx.fillStyle = "green";
-    else if (node === selectedStart) ctx.fillStyle = "blue"; //if this is selected start draw in blue
-    else if (node === selectedGoal) ctx.fillStyle = "yellow"; //if this is selected end draw in yellow
-    else if (isCompleted) ctx.fillStyle = "red";
-    else if (isCurrent || isNext) ctx.fillStyle = "red"; //if this node is in the animated path draw in red
-    else ctx.fillStyle = "white"; //otherwise draw in white
+    if (node === pendingConnectionNode) ctx.fillStyle = "rgb(82, 214, 82)";
+    else if (node === selectedStart) ctx.fillStyle = "rgb(0, 0, 255)"; //if this is selected start draw in blue
+    else if (node === selectedGoal) ctx.fillStyle = "rgb(231, 209, 111)"; //if this is selected end draw in yellow
+    else if (isCompleted) ctx.fillStyle = "rgb(158, 23, 23)";
+    else if (isCurrent || isNext) ctx.fillStyle = "rgb(158, 23, 23)"; //if this node is in the animated path draw in red
+    else ctx.fillStyle = "rgb(255, 255, 255)"; //otherwise draw in white
     drawNode(node);//draw it
   });
 
@@ -797,8 +855,21 @@ function openNodeEditor(node) {
   const regionLabel = document.createElement("label");
   regionLabel.textContent = "Region:";
 
-  const regionInput = document.createElement("input");
-  regionInput.value = node.region ?? "";
+  const regionSelect = document.createElement("select");
+
+  // build options from regions map
+  regions.forEach(region => {
+    const option = document.createElement("option");
+    option.value = region.id;
+    option.textContent = region.name;
+    regionSelect.appendChild(option);
+  });
+
+  // validate region assignment
+  const validRegion =
+    regions.has(node.regionId) ? node.regionId : DEFAULT_REGION_ID;
+
+  regionSelect.value = validRegion;
 
   const saveIcon = document.createElement("i");
   saveIcon.classList.add("fa-solid", "fa-floppy-disk");
@@ -808,12 +879,20 @@ function openNodeEditor(node) {
 
   saveBtn.onclick = () => {
     node.name = nameInput.value;
-    node.region = regionInput.value;
+    node.regionId = regionSelect.value;
+
     render();
     autosave();
   };
 
-  container.append(nameLabel, nameInput, regionLabel, regionInput, saveBtn);
+  container.append(
+    nameLabel,
+    nameInput,
+    regionLabel,
+    regionSelect,
+    saveBtn
+  );
+
   el.appendChild(container);
 
   el.style.display = "block";
@@ -944,7 +1023,8 @@ function serializeMap() {
     nodes: Array.from(nodes.values()),
     mapImage: mapImage?.src && mapImage.src.startsWith("data:image")
       ? mapImage.src
-      : null
+      : null,
+    regions: Array.from(regions.values())
   };
 }
 
@@ -1020,7 +1100,7 @@ function hydrateMap(data) {
     nodes.set(n.id, {
       id: n.id,
       name: n.name ?? "Node",
-      region: n.region ?? "dragonlands",
+      regionId: n.regionId ?? DEFAULT_REGION_ID,
       x: Number(n.x),
       y: Number(n.y),
       connections: Array.isArray(n.connections) ? n.connections : []
@@ -1037,40 +1117,57 @@ function hydrateMap(data) {
     mapImage = new Image();
   }
 
+  if (Array.isArray(data.regions)) {
+    regions.clear();
+
+    data.regions.forEach(r => {
+      regions.set(r.id, {
+        id: r.id,
+        name: r.name ?? "Region",
+        modifier: r.modifier ?? 1
+      });
+    });
+  }
+
+  //if the region editor is open on hydrate re-render the editor
+  const panel = document.querySelector("#regionsDisplay");
+  if (panel && !panel.classList.contains("hidden")) {
+    openRegionMenu();
+  }
+
   render();
 }
 
 //######################################################## UNUSED/OUTDATED/DEPRICATED
-function exportFullProject() {
-  return {
-    cards: cards,
-    map: serializeMap()
-  };
-}
+//function exportFullProject() {
+//  return {
+//    cards: cards,
+//    map: serializeMap()
+//  };
+//}
 
 //######################################################## download the map OUTDATED/DEPRICATED
-function downloadMap() {
-  const data = serializeMap();
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json"
-  });
-
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "quest-map.json";
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
+//function downloadMap() {
+//  const data = serializeMap();
+//
+//  const blob = new Blob([JSON.stringify(data, null, 2)], {
+//    type: "application/json"
+//  });
+//
+//  const url = URL.createObjectURL(blob);
+//
+//  const a = document.createElement("a");
+//  a.href = url;
+//  a.download = "quest-map.json";
+//  a.click();
+//
+//  URL.revokeObjectURL(url);
+//}
 
 //######################################################## download the project to a json file
 document.querySelector("#download").addEventListener("click", () => {
   downloadProject();
 });
-
 
 //######################################################## save the current map to the database
 async function autosave() {
@@ -1099,27 +1196,80 @@ function openRegionMenu() {
 
   panel.appendChild(title);
 
-  Object.entries(regionModifiers).forEach(([region, value]) => {
+  regions.forEach(region => {
     const row = document.createElement("div");
     row.classList.add("regionRow");
 
-    const label = document.createElement("span");
-    label.textContent = region;
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = region.name;
+    nameInput.classList.add("regionNameInput");
+
+    // update name on change
+    nameInput.addEventListener("change", () => {
+      region.name = nameInput.value.trim() || "Region";
+      autosave();
+    });
 
     const input = document.createElement("input");
     input.type = "number";
-    input.value = value;
+    input.value = region.modifier;
     input.min = 0.1;
     input.step = 0.1;
 
     input.addEventListener("change", () => {
-      regionModifiers[region] = Number(input.value);
+      region.modifier = Number(input.value);
       autosave();
     });
 
-    row.append(label, input);
+    const del = document.createElement("button");
+    del.textContent = "Delete";
+
+    del.addEventListener("click", () => {
+      regions.delete(region.id);
+      row.remove();
+      autosave();
+    });
+
+    row.append(nameInput, input, del);
     panel.appendChild(row);
   });
+
+  //save
+  const save = document.createElement("button");
+  save.textContent = "Save Regions";
+
+  save.addEventListener("click", async () => {
+    await autosave();
+    console.log("Regions saved");
+  });
+
+  panel.appendChild(save);
+
+  //create button
+  const create = document.createElement("button");
+  create.textContent = "Add Region";
+
+  create.addEventListener("click", () => {
+    createRegion();
+    openRegionMenu();
+  });
+
+  panel.appendChild(create);
+}
+
+//######################################################## ???
+function createRegion(name = "New Region", modifier = 1) {
+  const id = generateId();
+
+  regions.set(id, {
+    id,
+    name,
+    modifier
+  });
+
+  autosave();
+  return id;
 }
 
 //########################################################
@@ -1155,4 +1305,10 @@ setupImporter({
     hydrateMap(mapData);
     saveMapToDB();
   }
+});
+
+regions.set(DEFAULT_REGION_ID, {
+  id: DEFAULT_REGION_ID,
+  name: "Default",
+  modifier: 1
 });

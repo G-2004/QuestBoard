@@ -15,30 +15,43 @@
         <a href="index.html"><img class="siteLogo" src="assets/images/logo.png" alt="Map Quest Logo"></a>
     </div>
 
-    <h1 id="title"></h1>
-    <p id="host"></p>
-    <p id="reward"></p>
-    <p id="difficulty"></p>
-    <p id="description"></p>
+    <div class="pageLayout">
+        <!-- QUICK OVERVIEW -->
+        <div class="overviewContainer">
+            <h1 id="title"></h1>
+            <!-- add room for thumbnail -->
+            <p id="host"></p>
+            <!-- add room for host image -->
+            <p id="reward"></p>
+            <p id="difficulty"></p>
+        </div>
 
-    <!--IMAGE CAROUSEL-->
-    <div id="carouselContainerContainer" class="carousel slide" data-bs-ride="false">
+        
+        <div class="rightColumn">
 
-        <!-- INDICATORS  -->
-        <div class="carousel-indicators" id="carouselIndicators"></div>
+            <!--IMAGE CAROUSEL-->
+            <div id="carouselContainerContainer" class="carousel slide" data-bs-ride="false">
 
-        <!-- SLIDES -->
-        <div class="carousel-inner" id="carouselContainer"></div>
+                <!-- INDICATORS  -->
+                <div class="carousel-indicators" id="carouselIndicators"></div>
 
-        <!-- CONTROLS -->
-        <button class="carousel-control-prev" type="button" data-bs-target="#carouselContainerContainer" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
-        </button>
+                <!-- SLIDES -->
+                <div class="carousel-inner" id="carouselContainer"></div>
 
-        <button class="carousel-control-next" type="button" data-bs-target="#carouselContainerContainer" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
-        </button>
+                <!-- CONTROLS -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselContainerContainer" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
 
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselContainerContainer" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+
+            </div>
+
+            <!-- DESCRIPTION -->
+            <p id="description"></p>
+        </div>
     </div>
 
     <script src="assets/javascript/questDetails.js"></script>

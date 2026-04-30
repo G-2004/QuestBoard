@@ -52,6 +52,7 @@ canvas {
 }
 .userButtons{
     display: flex;
+    flex-direction: row;
     bottom: 20px;
     left: 0px;
     width: 100vw;
@@ -186,4 +187,8 @@ canvas {
 }
 .hidden{
     display: none;
+}
+.regionRow{
+    display: flex;
+    gap: 20px;
 }
