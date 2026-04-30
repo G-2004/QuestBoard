@@ -19,12 +19,14 @@ INTENTS
     -header logo needs to shrink when zooming in to allow other parts to fit on screen.
     -make resizing screen and zooming work on all pages without issue
     -allow user to pick a color for mapNodes
-BUGS
+
+BUGS/ISSUES
     -opening a json without set regions does not reset regions to a default
     -when hovering over mapping buttons moving the mouse too low can cause a "bouncing" loop
     -highlighting text in the form then dragging mouse out of form before releasing closes form
     -currently a node/connection at the bottom of the screen overlapping the ui button area can not be clicked (the node should not be clickable through the buttons themselves but should be in the area around them with no buttons.)
     -uploading the json on the main page and refreshing will revert to the prior version saved to the DB (fixed I think | need to check)
+
 README RULES
     - ~ADJUSTED:filename [function/"entry"] will list all functions that received any adjustment
     - +NEW:filename [function/"entry"] will list all newly added functions
@@ -128,7 +130,7 @@ README RULES
     -a whole lot of organizing (still incomplete)
     -region modifiers now accesable to user
 ##############################################################################################################
-**4/28/2026
+**4/29/2026
     -updated node appearance
     -user can now delete regions
     -user can now create regions
@@ -145,5 +147,5 @@ README RULES
     -increased mobile friendlyness of index page
     -replaced ctx fill and stroke colors with rgb values instead of color names
 ##############################################################################################################
-**4/29/2026 - gitUpdate
-    -no actual progress was made this day
+**4/30/2026 - gitUpdate
+    -corrected date on this and previous entry
