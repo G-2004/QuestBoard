@@ -352,29 +352,33 @@ function drawAnimatedEdge(a, b, t) {
   ctx.beginPath();
   ctx.moveTo(a.x, a.y);
 
+  //========== what are the coordinates of t% along this line ==========//
   const x = a.x + (b.x - a.x) * t;
   const y = a.y + (b.y - a.y) * t;
 
+  //========== draw the line ==========//
   ctx.lineTo(x, y);
   ctx.stroke();
 }
 
 //######################################################## Draw all nodes and connections taking camera position into account
 function render() {
+  //========== reset the canvas ==========//
   ctx.clearRect(0, 0, canvas.width, canvas.height);//clear canvas
 
-  ctx.save();//save drawing settings
+  //========== save drawing settings ==========//
+  ctx.save();
 
-  // move drawing based on camera x and y and zoom
+  //========== use camera settings to position the camera/canvas ==========//
   ctx.translate(-camera.x * camera.zoom, -camera.y * camera.zoom);
   ctx.scale(camera.zoom, camera.zoom);
 
-  // draw background image //
+  //========== draw background image ==========//
   if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
     ctx.drawImage(mapImage, 0, 0);
   }
 
-  // draw connections/edges (Base)
+  //========== draw all connections between nodes ==========//
   nodes.forEach(node => { //for every node
     node.connections.forEach(c => {//for every connection to that node
       const target = nodes.get(c.id);//current node to connect to 
@@ -386,17 +390,19 @@ function render() {
     });
   });
 
-  // draw connections/edges (animated overlay)
+  //========== draw the connection actively being pathed down (animated overlay) ==========//
   if (currentPath && currentPath.length > 1) { //if there is a path and it has more than one node in it
-    for (let i = 0; i < animSegment; i++) { //for each segmant of the animation prior to this
+    //========== draw completed pathing connection ==========//
+    for (let i = 0; i < animSegment; i++) { //for each segmant of the animation prior to the segment animating
+
       const a = nodes.get(currentPath[i]); //current node
       const b = nodes.get(currentPath[i + 1]); //next node
 
-      ctx.strokeStyle = "rgb(158, 23, 23)"; //draw in red
+      ctx.strokeStyle = "rgb(158, 23, 23)";
       drawEdge(a, b);//draw the edge with no animation //appears like nothing changed to user
     }
 
-    // partial segment
+    //========== draw active pathing connection ==========//
     if (animSegment < currentPath.length - 1) { //if this isn't the last segmant/node
       const a = nodes.get(currentPath[animSegment]); //current node
       const b = nodes.get(currentPath[animSegment + 1]);//next node
@@ -407,52 +413,65 @@ function render() {
     }
   }
 
-  // draw nodes
+  //========== draw all nodes ==========//
   nodes.forEach(node => {
     const isCompleted =
       currentPath.indexOf(node.id) !== -1 &&
       currentPath.indexOf(node.id) < animSegment;
 
+    //========== node being drawn from (pathing) ==========//
     const isCurrent = node.id === currentPath[animSegment];
 
+    //========== node being draw to (pathing) ==========//
     const isNext = node.id === currentPath[animSegment + 1];
+
+    //========== determine color of node based on if that node is special in some way ==========//
     if (node === pendingConnectionNode) ctx.fillStyle = "rgb(82, 214, 82)";
-    else if (node === selectedStart) ctx.fillStyle = "rgb(0, 0, 255)"; //if this is selected start draw in blue
-    else if (node === selectedGoal) ctx.fillStyle = "rgb(231, 209, 111)"; //if this is selected end draw in yellow
+    else if (node === selectedStart) ctx.fillStyle = "rgb(0, 0, 255)";
+    else if (node === selectedGoal) ctx.fillStyle = "rgb(231, 209, 111)";
     else if (isCompleted) ctx.fillStyle = "rgb(158, 23, 23)";
-    else if (isCurrent || isNext) ctx.fillStyle = "rgb(158, 23, 23)"; //if this node is in the animated path draw in red
-    else ctx.fillStyle = "rgb(255, 255, 255)"; //otherwise draw in white
-    drawNode(node);//draw it
+    else if (isCurrent || isNext) ctx.fillStyle = "rgb(158, 23, 23)";
+    else ctx.fillStyle = "rgb(255, 255, 255)";
+    drawNode(node);
   });
 
-  ctx.restore();//restore from save settings
+  //========== restore from save settings ==========//
+  ctx.restore();
 }
 
 //######################################################## clear previous path and start animation
 function animatePath() {
+  //========== reset prior animation variables to start fresh ==========//
   animSegment = 0;//how many segmants have we gone through
   animT = 0;
   animatedPath = [];
 
   //######################################################## animate the path being taken to get to the goal from start
   function step() {
-    if (!currentPath || currentPath.length < 2) return; //no path no animation
+    //========== stop if there is no path ==========//
+    if (!currentPath || currentPath.length < 2) return; 
 
+    //========== nodes at start and end of edge/connection ==========//
     const aId = currentPath[animSegment]; //current node
     const bId = currentPath[animSegment + 1]; //next node
-
     //acutally turn them into nodes
     const a = nodes.get(aId); 
     const b = nodes.get(bId);
 
+    //========== increase percentage of completion by animSpeed ==========//
     animT += animSpeed;//progress along edge
 
+    //========== tell program which segments are fully animated ==========//
     if (animT >= 1) {//if animT is one it is complete
-      if (!animatedPath.includes(aId)) {animatedPath.push(aId)};//store each node that is done animating
 
+      //========== store each node that is done animating ==========//
+      if (!animatedPath.includes(aId)) {animatedPath.push(aId)};
+
+      //========== move to next segment to animate ==========//
       animSegment++;
       animT = 0;//reset animT for next node
 
+      //========== if this was the last segment stop ==========//
       if (animSegment >= currentPath.length - 1) {
         animatedPath.push(bId);//push next node into completed path
         render();//render everything
@@ -460,10 +479,12 @@ function animatePath() {
       }
     }
 
+    //========== animate/render ==========//
     render();//render everything
     requestAnimationFrame(step); //when screen refreshes step again
   }
 
+  //========== start animating path ==========//
   step();
 }
 //########################################################
@@ -480,8 +501,10 @@ delNodeBtn.addEventListener("click", () => setMode("delete"));
 
 //######################################################## update mode to whatever mode is fed in
 function setMode(newMode) {
+  //========== if the mode clicked is the active mode enter default ==========//
   mode = (mode === newMode) ? "none" : newMode;
 
+  //========== if pathmode add x button and clear prior path ==========//
   if (mode === "path") {
     clearPath();
     toggleExitButton(true);
@@ -490,6 +513,7 @@ function setMode(newMode) {
     toggleExitButton(false);
   }
 
+  //========== update cursor and re-render page ==========//
   updateMode();
 }
 
@@ -513,9 +537,10 @@ document.addEventListener("keydown", (e) => {
 
 //######################################################## turn off/exit pathMode
 function exitPathMode() {
-  resetModes()
+  resetModes();
 
-  clearPath();
+  //clearPath();
+  updateModeUI();
 
   updateCursor();
   toggleExitButton(false);
@@ -527,7 +552,7 @@ function deleteNode(nodeId) {
   const node = nodes.get(nodeId);
   if (!node) return;
 
-  // remove references from neighbors
+  //========== remove references/connections from neighbors ==========//
   node.connections.forEach(c => {
     const neighbor = nodes.get(c.id);
     if (!neighbor) return;
@@ -537,16 +562,19 @@ function deleteNode(nodeId) {
     );
   });
 
-  // remove the node itself
+  //========== delete the node ==========//
   nodes.delete(nodeId);
 
+  //========== save project ==========//
   autosave();
 }
 
 //######################################################## based on active mode add, delete, connect, etc.
 canvas.addEventListener("click", (e) => {
 
+  //========== based on mode run relevant code ==========//
   switch (mode) {
+    //========== delete a node and its connections ==========//
     case "delete": {
 
       const node = getClickedNode(e);
@@ -575,6 +603,7 @@ canvas.addEventListener("click", (e) => {
       break;
     }
 
+    //========== add a node ==========//
     case "add": {
       const pos = getMouseWorldPos(e);
       createNode(generateId(), "dragonlands", pos.x, pos.y);
@@ -582,20 +611,24 @@ canvas.addEventListener("click", (e) => {
       break;
     }
 
+    //========== find and render best path between two nodes ==========//
     case "path": {
       const node = getClickedNode(e);
       if (!node) return;
 
+      //========== if there is no selected start it is the clicked node ==========//
       if (!selectedStart) {
         clearPath();
         selectedStart = node;
         selectedGoal = null;
       } 
+      //========== if there is a start but no goal the clicked node is the goal and we will path to it ==========//
       else if (!selectedGoal) {
         selectedGoal = node;
         currentPath = aStar(selectedStart.id, selectedGoal.id) || [];
         animatePath();
       } 
+      //========== if there is a start and an end reset and make the freshly clicked node the start ==========//
       else {
         clearPath();
         selectedStart = node;
@@ -606,10 +639,12 @@ canvas.addEventListener("click", (e) => {
       break;
     }
 
+    //========== connect two nodes with an edge ==========//
     case "connect": {
       const node = getClickedNode(e);
       if (!node) return;
 
+      //========== clicked node is waiting for you to click another node ==========//
       if (!pendingConnectionNode) {
         pendingConnectionNode = node;
         render();
@@ -619,7 +654,9 @@ canvas.addEventListener("click", (e) => {
       const nodeA = pendingConnectionNode;
       const nodeB = node;
 
+      //========== don't make a connection to yourself ==========//
       if (nodeA !== nodeB) {
+        //========== connect the nodes unless that connection already exists ==========//
         const exists = nodeA.connections.some(c => c.id === nodeB.id);
         if (!exists) connect(nodeA.id, nodeB.id, 5);
       }
@@ -629,6 +666,7 @@ canvas.addEventListener("click", (e) => {
       break;
     }
 
+    //========== clicking a node with no mode will allow you to edit it ==========//
     default: {
       const pos = getMouseWorldPos(e);
 
@@ -644,6 +682,7 @@ canvas.addEventListener("click", (e) => {
         return;
       }
 
+      //========== if user did not click on a node or edge close any open editor ==========//
       closeEditor();
       break;
     }
@@ -758,44 +797,59 @@ function getEdgeAt(x, y) {
 
   return null;
 }
+
 //######################################################## determines where to display node/connection editor and associated nib
 function positionEditor(worldX, worldY) {
+  //========== ... ==========//
   const el = document.querySelector("#editor");
 
+  //========== where is this x y coordinate in the window ==========//
   const screen = worldToScreen(worldX, worldY);
+  //========== ... ==========//
   const padding = 10;
 
   const navBar = document.querySelector(".headerBar");
   const navHeight = navBar ? navBar.offsetHeight : 0;
 
+  //========== ... ==========//
   el.style.display = "block";
   el.style.visibility = "hidden";
 
+  //========== get size of editor ==========//
   const rect = el.getBoundingClientRect();
   const w = rect.width;
   const h = rect.height;
 
+  //========== reset position of nib ==========//
   el.classList.remove("nib-top", "nib-bottom", "nib-left", "nib-right");
 
   let x, y;
-  let nib = "nib-bottom"; // default above node
+  //========== the location of the nib is at the bottom of the interface unless told otherwise ==========//
+  let nib = "nib-bottom";
 
+  //========== default position of nib ==========//
+  //x position of nib is halfway across container
   x = screen.x - w / 2;
+  //y position of nib by default is 20 px below the container
   y = screen.y - h - 20;
 
+  //========== is there room to display the whole editor normally? does it get cropped by anything? ==========//
   let fitsAbove =
     y >= navHeight + padding &&
     x >= padding &&
     x + w <= window.innerWidth - padding;
 
+  //========== if editor fits nib reamains in default position ==========//
   if (fitsAbove) {
     nib = "nib-bottom";
   }
 
+  //========== if editor doesn't fit find out where it does ==========//
   else {
     x = screen.x - w / 2;
     y = screen.y + 20;
 
+    //========== can we position the editor below the node? ==========//
     let fitsBelow =
       y + h <= window.innerHeight - padding &&
       x >= padding &&
@@ -805,6 +859,7 @@ function positionEditor(worldX, worldY) {
       nib = "nib-top";
     }
 
+    //========== if we can't fit the editor above or below then can we fit it to the left or right? ==========//
     else {
       // decide side based on available space
       const spaceLeft = screen.x;
@@ -820,7 +875,7 @@ function positionEditor(worldX, worldY) {
         nib = "nib-right";
       }
 
-      // clamp vertically
+      //========== make sure y is below navBar and above bottom of screen ==========//
       y = Math.max(
         navHeight + padding,
         Math.min(window.innerHeight - h - padding, y)
@@ -828,18 +883,21 @@ function positionEditor(worldX, worldY) {
     }
   }
 
-  //clamp
+  //========== guarentee we x and y are not outside the visible space ==========//
   x = Math.max(padding, Math.min(window.innerWidth - w - padding, x));
   y = Math.max(navHeight + padding, Math.min(window.innerHeight - h - padding, y));
 
+  //========== place editor  ==========//
   el.style.left = x + "px";
   el.style.top = y + "px";
 
+  //========== give editor nibs class ==========//
   el.classList.add(nib);
   el.style.visibility = "visible";
 }
 //######################################################## opens node editor for user
 function openNodeEditor(node) {
+  //========== assemble editor interior ==========//
   const el = document.querySelector("#editor");
   el.innerHTML = "";
 
@@ -857,7 +915,7 @@ function openNodeEditor(node) {
 
   const regionSelect = document.createElement("select");
 
-  // build options from regions map
+  //========== create options menu for regions ==========//
   regions.forEach(region => {
     const option = document.createElement("option");
     option.value = region.id;
@@ -865,12 +923,12 @@ function openNodeEditor(node) {
     regionSelect.appendChild(option);
   });
 
-  // validate region assignment
-  const validRegion =
-    regions.has(node.regionId) ? node.regionId : DEFAULT_REGION_ID;
+  //========== check this region exists ==========//
+  const validRegion = regions.has(node.regionId) ? node.regionId : DEFAULT_REGION_ID;
 
   regionSelect.value = validRegion;
 
+  //========== create save button ==========//
   const saveIcon = document.createElement("i");
   saveIcon.classList.add("fa-solid", "fa-floppy-disk");
 
@@ -885,6 +943,7 @@ function openNodeEditor(node) {
     autosave();
   };
 
+  //========== create the editor with assembled fields ==========//
   container.append(
     nameLabel,
     nameInput,
@@ -896,10 +955,12 @@ function openNodeEditor(node) {
   el.appendChild(container);
 
   el.style.display = "block";
+  //========== position the editor relative to the node ==========//
   positionEditor(node.x, node.y);
 }
 //######################################################## opens edge editor for user
 function openEdgeEditor(edge) {
+  //========== assemble editor interior ==========//
   const el = document.querySelector("#editor");
   el.innerHTML = "";
 
@@ -914,6 +975,7 @@ function openEdgeEditor(edge) {
   input.value = edge.cost ?? 1;
   input.id = "edgeCost";
 
+  //========== create save button ==========//
   const saveIcon = document.createElement("i");
   saveIcon.classList.add("fa-solid", "fa-floppy-disk");
 
@@ -935,6 +997,7 @@ function openEdgeEditor(edge) {
     autosave();
   };
 
+  //========== create the editor with assembled fields ==========//
   container.append(label, input, saveBtn);
   el.appendChild(container);
 
@@ -943,6 +1006,7 @@ function openEdgeEditor(edge) {
   const midX = (edge.a.x + edge.b.x) / 2;
   const midY = (edge.a.y + edge.b.y) / 2;
 
+  //========== position the editor relative to the middle of the edge ==========//
   positionEditor(midX, midY);
 }
 //######################################################## hide the node/edge editor and remove any internal content
@@ -991,19 +1055,17 @@ function deleteEdge(edge) {
   const a = edge.a;
   const b = edge.b;
 
-  // remove connection from A - B
+  //========== removes connection/edge from involved nodes ==========//
   a.connections = a.connections.filter(c => c.id !== b.id);
-
-  // remove connection from B - A
   b.connections = b.connections.filter(c => c.id !== a.id);
 
-  // check if this edge exists in current path
+  //========== check if this edge exists in current path ==========//
   if (currentPath && currentPath.length > 1) {
     for (let i = 0; i < currentPath.length - 1; i++) {
       const idA = currentPath[i];
       const idB = currentPath[i + 1];
 
-      // if path contains this exact edge (in either direction)
+      //========== if path contains this edge (in either direction) clear path ==========//
       if (
         (idA === a.id && idB === b.id) ||
         (idA === b.id && idB === a.id)
@@ -1014,6 +1076,7 @@ function deleteEdge(edge) {
     }
   }
 
+  //========== save project ==========//
   autosave();
 }
 
@@ -1036,10 +1099,12 @@ function openDB() {
     request.onupgradeneeded = () => {
       const db = request.result;
 
+      //========== create maps store one does not already exist ==========//
       if (!db.objectStoreNames.contains(STORES.MAPS)) {
         db.createObjectStore(STORES.MAPS, { keyPath: "id" });
       }
 
+      //========== create quests store one does not already exist ==========//
       if (!db.objectStoreNames.contains(STORES.QUESTS)) {
         db.createObjectStore(STORES.QUESTS, { keyPath: "id" });
       }
@@ -1072,6 +1137,7 @@ async function loadMapFromDB() {
   const tx = db.transaction(STORES.MAPS, "readonly");
   const store = tx.objectStore(STORES.MAPS);
 
+  //========== return a promise that returns the saved data ==========//
   return new Promise((resolve) => {
     const req = store.get("current");
 
@@ -1084,18 +1150,21 @@ async function loadMapFromDB() {
 function hydrateMap(data) {
   if (!data) return;
 
-  // unwrap project format if needed
+  //========== if the file has a map section and a nodes section in that set data to be just the map section ==========//
   if (data.map && data.map.nodes) {
     data = data.map;
   }
 
+  //========== if data.nodes isn't an array stop ==========//
   if (!Array.isArray(data.nodes)) {
     console.error("Invalid map format:", data);
     return;
   }
 
+  //========== clear/remove any nodes that are on the page ==========//
   nodes.clear();
 
+  //========== for each node in the file add it to the global nodes variable ==========//
   for (const n of data.nodes) {
     nodes.set(n.id, {
       id: n.id,
@@ -1107,8 +1176,10 @@ function hydrateMap(data) {
     });
   }
 
+  //========== erase any rendered path ==========//
   clearPath();
 
+  //========== set the background image ==========//
   if (data.mapImage && data.mapImage.startsWith("data:image")) {
     mapImage = new Image();
     mapImage.onload = () => render();
@@ -1117,6 +1188,7 @@ function hydrateMap(data) {
     mapImage = new Image();
   }
 
+  //========== if regions is an array fill the global variable with data from file ==========//
   if (Array.isArray(data.regions)) {
     regions.clear();
 
@@ -1129,40 +1201,15 @@ function hydrateMap(data) {
     });
   }
 
-  //if the region editor is open on hydrate re-render the editor
+  //========== if the region editor is open re-render the editor ==========//
   const panel = document.querySelector("#regionsDisplay");
   if (panel && !panel.classList.contains("hidden")) {
     openRegionMenu();
   }
 
+  //========== re-render ==========//
   render();
 }
-
-//######################################################## UNUSED/OUTDATED/DEPRICATED
-//function exportFullProject() {
-//  return {
-//    cards: cards,
-//    map: serializeMap()
-//  };
-//}
-
-//######################################################## download the map OUTDATED/DEPRICATED
-//function downloadMap() {
-//  const data = serializeMap();
-//
-//  const blob = new Blob([JSON.stringify(data, null, 2)], {
-//    type: "application/json"
-//  });
-//
-//  const url = URL.createObjectURL(blob);
-//
-//  const a = document.createElement("a");
-//  a.href = url;
-//  a.download = "quest-map.json";
-//  a.click();
-//
-//  URL.revokeObjectURL(url);
-//}
 
 //######################################################## download the project to a json file
 document.querySelector("#download").addEventListener("click", () => {
@@ -1186,6 +1233,7 @@ document.querySelector("#regions").addEventListener("click", () => {
 
 //######################################################## fills the region menu with context
 function openRegionMenu() {
+  //========== assemble parts of menu ==========//
   const panel = document.querySelector("#regionsDisplay");
 
   panel.classList.remove("hidden");
@@ -1222,6 +1270,7 @@ function openRegionMenu() {
       autosave();
     });
 
+    //========== delete region button ==========//
     const del = document.createElement("button");
     del.textContent = "Delete";
 
@@ -1231,11 +1280,12 @@ function openRegionMenu() {
       autosave();
     });
 
+    //========== place assembled region row in editor  ==========//
     row.append(nameInput, input, del);
     panel.appendChild(row);
   });
 
-  //save
+  //========== create save button ==========//
   const save = document.createElement("button");
   save.textContent = "Save Regions";
 
@@ -1246,7 +1296,7 @@ function openRegionMenu() {
 
   panel.appendChild(save);
 
-  //create button
+  //========== button to create a new region ==========//
   const create = document.createElement("button");
   create.textContent = "Add Region";
 
@@ -1258,7 +1308,7 @@ function openRegionMenu() {
   panel.appendChild(create);
 }
 
-//######################################################## ???
+//######################################################## creates a new region
 function createRegion(name = "New Region", modifier = 1) {
   const id = generateId();
 
@@ -1278,35 +1328,42 @@ function createRegion(name = "New Region", modifier = 1) {
 //########################################################
 //########################################################
 
-//######################################################## render on starting page
+//========== load map data from database on opening page ==========//
 (async function init() {
   const data = await loadMapFromDB();
   hydrateMap(data);
 })();
 
+//========== render canvas on opening page ==========//
 resizeCanvas();// render on page load
 
+//========== tells the importer how to work ==========//
 setupImporter({
   inputSelector: "#upload",
 
+  //========== tells importer what to do with cards in the json ==========//
   setCards: async (newCards) => {
     const db = await openDB();
     const tx = db.transaction(STORES.QUESTS, "readwrite");
     const store = tx.objectStore(STORES.QUESTS);
 
-    await store.clear(); // clear quests
+    //========== clear existing cards in the database ==========//
+    await store.clear();
 
+    //========== put each card in the database ==========//
     for (const card of newCards) {
       store.put(card);
     }
   },
 
+  //========== tells importer what hydrate map should do ==========//
   hydrateMap: (mapData) => {
     hydrateMap(mapData);
     saveMapToDB();
   }
 });
 
+//========== creates a default region ==========//
 regions.set(DEFAULT_REGION_ID, {
   id: DEFAULT_REGION_ID,
   name: "Default",

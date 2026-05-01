@@ -4,6 +4,7 @@ Project 3 REFLECTION
 I think that so far the project is going well. I am disatisfied with the current logo and seeking a better name for the project however other than that I believe things are going well. The remainder of this project I believe will focus on more control over cards for the user, cleaner css for the description page, and adding the actual mapping page and javaScript. Some "Technologies" I used in this project are the font-awesome library, bootstrap framework, JSON files, javaScript, HTML, and CSS. I do think I will be challenged to complete the mapping section due to delays caused by my ER visit however I belive at this point that it is completable. I'm having a great deal of fun making this site so far. 
 
 INTENTS
+    -find way to make downloaded json file smaller
     -make map page mobile friendly (the buttons currently go beyond screen boundries when the screen width is to small)(zooming in too much makes buttons overlap | not the slightest clue how to make zooming the normal way work well. May have to find a way to disable)
     -fix the nodes highlighting before they are visually reached in questMap.js
     -create ability for quest cards to be removed individually
@@ -24,8 +25,10 @@ BUGS/ISSUES
     -opening a json without set regions does not reset regions to a default
     -when hovering over mapping buttons moving the mouse too low can cause a "bouncing" loop
     -highlighting text in the form then dragging mouse out of form before releasing closes form
-    -currently a node/connection at the bottom of the screen overlapping the ui button area can not be clicked (the node should not be clickable through the buttons themselves but should be in the area around them with no buttons.)
-    -uploading the json on the main page and refreshing will revert to the prior version saved to the DB (fixed I think | need to check)
+    
+    FIXED? (uncertain if fixed)
+        -on my phone the region editor button is partially hidden under the navBar
+        -uploading the json on the main page and refreshing will revert to the prior version saved to the DB (fixed I think | need to check)
 
 README RULES
     - ~ADJUSTED:filename [function/"entry"] will list all functions that received any adjustment
@@ -149,3 +152,7 @@ README RULES
 ##############################################################################################################
 **4/30/2026 - gitUpdate
     -corrected date on this and previous entry
+    -changed minimum height on overviewContainer class in questDetails.css to work better with new navBar height
+    -comments in existing functions
+    -added section in bugs for issues that I we are uncertain if we fixed
+    -corrected gap between screen top and sideBars in questMap
