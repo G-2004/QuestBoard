@@ -21,7 +21,7 @@ canvas {
     display: flex;
     flex-direction: column;
     justify-content: right;
-    top: 10.5vh;
+    top: 11vh;
     bottom: 160px; /* space for userButtons */
     height: auto;
     z-index: 5;
@@ -37,7 +37,7 @@ canvas {
     display: flex;
     flex-direction: column;
     justify-content: right;
-    top: 10.5vh;
+    top: 11vh; /* space for navBar */
     bottom: 160px; /* space for userButtons */
     height: auto;
     z-index: 5;
@@ -191,4 +191,47 @@ canvas {
 .regionRow{
     display: flex;
     gap: 20px;
+}
+/*unsorted*/
+.regionColorBtn {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 2px solid #333;
+  background: #eee;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorSwatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #222;
+  background: transparent;
+}
+
+.colorInputHolder {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+}
+.colorPickerButton{
+    width: 100%;
+}
+.colorEditor {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch; /* key: children fill height */
+    width: 100%;
+    height: 100%; /* important if parent has height */
+}
+.colorBackBtn {
+    width: 20%;
+    height: auto;          /* let flex control height */
+    align-self: stretch;   /* force full height */
 }

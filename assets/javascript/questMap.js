@@ -1,3 +1,6 @@
+let needsRender = false;
+let hoveredNode = null;
+let hoveredEdge = null;
 //########################################################
 //########################################################
 //######################################################## Global Variables
@@ -258,6 +261,8 @@ document.querySelector("#mapUpload").addEventListener("change", (e) => {
   const file = e.target.files[0];
   //========== if nothing was actually uploaded stop ==========//
   if (!file) return;
+
+  
   //========== a reader used to interpret the file ==========//
   const reader = new FileReader();
 
@@ -285,6 +290,9 @@ document.querySelector("#mapUpload").addEventListener("change", (e) => {
 
   //========== turn the binary data of the file into base64 image data/url ==========//
   reader.readAsDataURL(file);
+
+  //========== reset target so the same file can be uploaded again ==========// NOT WORKING
+  //e.target.value = "";
 });
 
 //######################################################## tell code we are panning when holding down mouse
@@ -296,6 +304,22 @@ mapContainer.addEventListener("mousedown", (e) => {
   last.x = e.clientX;
   last.y = e.clientY;
 });
+
+function onPointerDown(e) {
+  canvas.setPointerCapture(e.pointerId);
+
+  activePointers.set(e.pointerId, {
+    x: e.clientX,
+    y: e.clientY
+  });
+
+  // single touch = potential drag or click
+  if (activePointers.size === 1) {
+    dragging = true;
+    last.x = e.clientX;
+    last.y = e.clientY;
+  }
+}
 
 //######################################################## if the mouse has been released from being held down we are not panning the camera
 mapContainer.addEventListener("mouseup", () => dragging = false);
@@ -378,9 +402,18 @@ function render() {
     ctx.drawImage(mapImage, 0, 0);
   }
 
+  //========== if hovering over an edge draw that highlight first ==========//
+  if (hoveredEdge) {
+    drawEdgeHighlight(hoveredEdge.a, hoveredEdge.b);
+  }
+  
+
+  //========== reset line width ==========//
+  ctx.lineWidth = 2;
+
   //========== draw all connections between nodes ==========//
-  nodes.forEach(node => { //for every node
-    node.connections.forEach(c => {//for every connection to that node
+  nodes.forEach(node => {
+    node.connections.forEach(c => {
       const target = nodes.get(c.id);//current node to connect to 
 
       if (node.id < target.id) { //sort by uuid to prevent drawing a connection twice
@@ -390,7 +423,7 @@ function render() {
     });
   });
 
-  //========== draw the connection actively being pathed down (animated overlay) ==========//
+  //========== draw the path that has/is being animated (animated overlay) ==========//
   if (currentPath && currentPath.length > 1) { //if there is a path and it has more than one node in it
     //========== draw completed pathing connection ==========//
     for (let i = 0; i < animSegment; i++) { //for each segmant of the animation prior to the segment animating
@@ -413,6 +446,11 @@ function render() {
     }
   }
 
+  //========== if hovering over a node draw that highlight first ==========//
+  if (hoveredNode) {
+    drawNodeHighlight(hoveredNode);
+  }
+
   //========== draw all nodes ==========//
   nodes.forEach(node => {
     const isCompleted =
@@ -431,7 +469,10 @@ function render() {
     else if (node === selectedGoal) ctx.fillStyle = "rgb(231, 209, 111)";
     else if (isCompleted) ctx.fillStyle = "rgb(158, 23, 23)";
     else if (isCurrent || isNext) ctx.fillStyle = "rgb(158, 23, 23)";
-    else ctx.fillStyle = "rgb(255, 255, 255)";
+    else {
+      const regionColor = getNodeRegionColor(node);
+      ctx.fillStyle = regionColor ?? "rgb(255, 255, 255)";
+    }
     drawNode(node);
   });
 
@@ -808,7 +849,7 @@ function positionEditor(worldX, worldY) {
   //========== ... ==========//
   const padding = 10;
 
-  const navBar = document.querySelector(".headerBar");
+  const navBar = document.querySelector(".navBar");
   const navHeight = navBar ? navBar.offsetHeight : 0;
 
   //========== ... ==========//
@@ -1196,7 +1237,8 @@ function hydrateMap(data) {
       regions.set(r.id, {
         id: r.id,
         name: r.name ?? "Region",
-        modifier: r.modifier ?? 1
+        modifier: r.modifier ?? 1,
+        color: r.color ?? null
       });
     });
   }
@@ -1270,6 +1312,78 @@ function openRegionMenu() {
       autosave();
     });
 
+    //========== ??? ==========//
+    const colorText = document.createElement("input");
+    colorText.type = "text";
+    colorText.placeholder = "#ffffff or rgb(255,255,255)";
+    colorText.classList.add("colorTextInput");
+
+    // set initial value
+    if (region.color) {
+      colorText.value = region.color;
+    }
+
+    colorText.addEventListener("change", () => {
+      const normalized = normalizeColor(colorText.value);
+
+      if (!normalized) {
+        // invalid input → revert
+        colorText.value = region.color ?? "";
+        return;
+      }
+
+      region.color = normalized;
+      swatch.style.background = normalized;
+      colorInput.value = normalized; // keep picker in sync
+
+      autosave();
+      requestRender();
+    });
+
+    const colorBtn = document.createElement("button");
+    colorBtn.classList.add("regionColorBtn");
+
+    // visual (circle inside)
+    const swatch = document.createElement("div");
+    swatch.classList.add("colorSwatch");
+    colorBtn.appendChild(swatch);
+
+    // hidden color input
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.classList.add("hidden");
+
+    // set initial color
+    if (region.color) {
+      swatch.style.background = region.color;
+      colorInput.value = rgbToHex(region.color);
+    }
+
+    // open picker
+    colorBtn.onclick = () => openColorEditor(region);
+
+    // when user picks color
+    colorInput.onchange = (e) => {
+      const hex = e.target.value;
+
+      region.color = hex;
+      swatch.style.background = hex;
+      colorText.value = hex;
+
+      autosave();
+      requestRender();
+    };
+
+    // reset button
+    const resetBtn = document.createElement("button");
+    resetBtn.textContent = "Reset Color";
+    resetBtn.onclick = () => {
+      region.color = null;
+      swatch.style.background = "transparent";
+      autosave();
+      requestRender();
+    };
+
     //========== delete region button ==========//
     const del = document.createElement("button");
     del.textContent = "Delete";
@@ -1281,7 +1395,7 @@ function openRegionMenu() {
     });
 
     //========== place assembled region row in editor  ==========//
-    row.append(nameInput, input, del);
+    row.append(colorBtn, resetBtn, nameInput, input, del);
     panel.appendChild(row);
   });
 
@@ -1315,11 +1429,198 @@ function createRegion(name = "New Region", modifier = 1) {
   regions.set(id, {
     id,
     name,
-    modifier
+    modifier,
+    color: null
   });
 
   autosave();
   return id;
+}
+
+//######################################################## get the color of a region
+function getNodeRegionColor(node) {
+  const region = regions.get(node.regionId);
+  return region?.color ?? null;
+}
+
+//######################################################## convert rgb value into hex value
+function rgbToHex(rgb) {
+  if (!rgb) return "#ffffff";
+
+  const result = rgb.match(/\d+/g);
+  if (!result) return "#ffffff";
+
+  return (
+    "#" +
+    result
+      .map(x => {
+        const hex = parseInt(x).toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+      })
+      .join("")
+  );
+}
+
+//######################################################## unify color input into a consistant format
+function normalizeColor(input) {
+  //???
+  if (!input) return null;
+
+  input = input.trim().toLowerCase();
+
+  // hex (#fff or #ffffff)
+  if (/^#([0-9a-f]{3}){1,2}$/.test(input)) {
+    if (input.length === 4) {
+      // expand shorthand (#abc → #aabbcc)
+      return "#" + [...input.slice(1)].map(c => c + c).join("");
+    }
+    return input;
+  }
+
+  // rgb(255,255,255)
+  const rgbMatch = input.match(/\d+/g);
+  if (rgbMatch && rgbMatch.length === 3) {
+    return (
+      "#" +
+      rgbMatch
+        .map(n => {
+          const v = Math.max(0, Math.min(255, Number(n)));
+          return v.toString(16).padStart(2, "0");
+        })
+        .join("")
+    );
+  }
+
+  return null;
+}
+
+//######################################################## renders but only on a frame update
+function requestRender() {
+  if (needsRender) return;
+  needsRender = true;
+
+  requestAnimationFrame(() => {
+    render();
+    needsRender = false;
+  });
+}
+
+//######################################################## turn hex color value into rgb
+function hexToRgbString(hex) {
+  const bigint = parseInt(hex.slice(1), 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgb(${r},${g},${b})`;
+}
+
+//######################################################## replaces regions editor with color editor
+function openColorEditor(region) {
+  const panel = document.querySelector("#regionsDisplay");
+  panel.innerHTML = "";
+
+  const container = document.createElement("div");
+  container.classList.add("colorEditor");
+
+  // back button
+  const backBtn = document.createElement("button");
+  backBtn.classList.add("colorBackBtn");
+  backBtn.style.background = region.color ?? "#ffffff";
+
+  backBtn.onclick = () => {
+    openRegionMenu(); // go back
+  };
+
+  const colorInputHolder = document.createElement("div");
+  colorInputHolder.classList.add("colorInputHolder");
+  // HEX INPUT
+  const hexInput = document.createElement("input");
+  hexInput.type = "text";
+  hexInput.value = region.color ?? "#ffffff";
+
+  // RGB INPUT
+  const rgbInput = document.createElement("input");
+  rgbInput.type = "text";
+  rgbInput.value = region.color
+    ? hexToRgbString(region.color)
+    : "rgb(255,255,255)";
+
+  // COLOR PICKER
+  const picker = document.createElement("input");
+  picker.classList.add("colorPickerButton");
+  picker.type = "color";
+  picker.value = region.color ?? "#ffffff";
+
+  //######################################################## update region with new color
+  function updateColor(newColor) {
+    const normalized = normalizeColor(newColor);
+    if (!normalized) return;
+
+    region.color = normalized;
+
+    hexInput.value = normalized;
+    rgbInput.value = hexToRgbString(normalized);
+    picker.value = normalized;
+    backBtn.style.background = normalized;
+
+    autosave();
+    requestRender();
+  }
+
+  picker.onchange = e => updateColor(e.target.value);
+  hexInput.onchange = e => updateColor(e.target.value);
+  rgbInput.onchange = e => updateColor(e.target.value);
+
+  colorInputHolder.append(picker, hexInput, rgbInput);
+  container.append(backBtn, colorInputHolder);
+  panel.append(container);
+}
+
+//######################################################## track mouse to see if we are hovering over a node or edge
+canvas.addEventListener("mousemove", (e) => {
+  if (dragging) return;
+
+  const pos = getMouseWorldPos(e);
+
+  hoveredNode = getNodeAt(pos.x, pos.y);
+
+  if (!hoveredNode) {
+    hoveredEdge = getEdgeAt(pos.x, pos.y);
+  } else {
+    hoveredEdge = null;
+  }
+
+  requestRender();
+});
+
+//######################################################## based on mode choose hover highlight color
+function getHighlightColor() {
+  switch (mode) {
+    case "delete": return "rgb(220, 60, 60)";
+    case "connect": return "rgb(60, 200, 60)";
+    case "path": return "rgb(48, 120, 255)";
+    case "add": return "rgb(200, 200, 200)";
+    default: return "rgb(48, 120, 255)"; // editor/default
+  }
+}
+
+//######################################################## draw node highlight
+function drawNodeHighlight(node) {
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, 16, 0, Math.PI * 2); // bigger than node
+  ctx.strokeStyle = getHighlightColor();
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+//######################################################## draw edge highlight
+function drawEdgeHighlight(a, b) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.strokeStyle = getHighlightColor();
+  ctx.lineWidth = 6; // thicker than normal edge
+  ctx.stroke();
 }
 
 //########################################################
@@ -1367,5 +1668,6 @@ setupImporter({
 regions.set(DEFAULT_REGION_ID, {
   id: DEFAULT_REGION_ID,
   name: "Default",
-  modifier: 1
+  modifier: 1,
+  color: null
 });

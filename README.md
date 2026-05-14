@@ -25,6 +25,7 @@ BUGS/ISSUES
     -opening a json without set regions does not reset regions to a default
     -when hovering over mapping buttons moving the mouse too low can cause a "bouncing" loop
     -highlighting text in the form then dragging mouse out of form before releasing closes form
+    -if you upload the same file twice in a row it will not recognize the second upload
     
     FIXED? (uncertain if fixed)
         -on my phone the region editor button is partially hidden under the navBar
@@ -156,3 +157,6 @@ README RULES
     -comments in existing functions
     -added section in bugs for issues that I we are uncertain if we fixed
     -corrected gap between screen top and sideBars in questMap
+    -the css class .headerBar has been renamed navBar throughout all files
+    -user can now assign a color to each region
+    -hovering over a node or edge now highlights it
